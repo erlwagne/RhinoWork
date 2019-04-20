@@ -166,6 +166,8 @@ mod4vs6
 dev.new()
 dat <- subset(rhau, select = c(sst.DI.spring, sst.PI.spring, mei.avg, cu.spring, 
                               st.onset, pdo.index))
+colnames(dat) <- c("SST spring (DI)", "SST spring (PI)", "MEI", "Coastal Upwelling (Spring)", 
+                   "Spring Transition (Onset)", "PDO Index")
 corrplot(cor(dat), method = "ellipse")
 
 ## Model validation by graphical posterior predictive checking
