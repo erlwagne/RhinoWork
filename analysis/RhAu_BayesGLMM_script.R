@@ -12,36 +12,42 @@ library(denstrip)
 library(yarrr)
 library(corrplot)
 
-## Read data
-nest.data <- read.csv(file.path("~","R","RhinoWork","data","RhAu2.csv"), fileEncoding="UTF-8-BOM") ## Nest data at site level
-rhau.agg <- read.csv(file.path("~","R","RhinoWork","data","RhAu4.csv"), header = TRUE)
+#--------------------------
+# DATA  
+#--------------------------
+
+data.path <- 
+
+# Nest success data
+nest_data <- read.csv(file.path("~","R","RhinoWork","data","RhAu2.csv"), fileEncoding="UTF-8-BOM") ## Nest data at site level
+rhau_agg <- read.csv(file.path("~","R","RhinoWork","data","RhAu4.csv"), header = TRUE)
 
 # Merge environmental covariates into site-level nest data
-env.data <- subset(rhau.agg, Island == "DI", 
-                   select = c(Year, sst.spring, sst.summer, mei.avg, cu.spring, 
-                              cu.summer, st.onset, st.length, pdo.index))
-names(env.data) <- gsub("sst.", "sst.DI.", names(env.data))
-env.data <- data.frame(env.data, 
-                       sst.PI.spring = rhau.agg$sst.spring[rhau.agg$Island=="PI"],
-                       sst.PI.summer = rhau.agg$sst.summer[rhau.agg$Island=="PI"])
+env_data <- subset(rhau_agg, Island == "DI", 
+                   select = c(Year, sst_spring, sst_summer, mei_avg, cu_spring, 
+                              cu_summer, st_onset, st_length, pdo_index))
+names(env_data) <- gsub("sst_", "sst_DI_", names(env_data))
+env_data <- data.frame(env_data, 
+                       sst_PI_spring = rhau_agg$sst_spring[rhau_agg$Island=="PI"],
+                       sst_PI_summer = rhau_agg$sst_summer[rhau_agg$Island=="PI"])
 
 #---------------------------------
 # PCA of Oceanographic Predictors
 #---------------------------------
 
-pca.env <- princomp(~ sst.DI.spring + sst.PI.spring + mei.avg + cu.spring + st.onset + pdo.index, 
-                    data = env.data, cor = TRUE)
+pca_env <- princomp(~ sst_DI_spring + sst_PI_spring + mei_avg + cu_spring + st_onset + pdo_index, 
+                    data = env_data, cor = TRUE)
 dev.new()
 par(mfrow = c(3,1))
-plot(pca.env)  # scree plot
-biplot(pca.env) # biplot of PCAs and oceanographic indicators
-barplot(pca.env$loadings[,1], names.arg = dimnames(pca.env$loadings)[[1]], main = "PC1 loadings")
-pca.env$loadings 
-pca.env$sdev / sum(pca.env$sdev)
+plot(pca_env)  # scree plot
+biplot(pca_env) # biplot of PCAs and oceanographic indicators
+barplot(pca_env$loadings[,1], names.arg = dimnames(pca_env$loadings)[[1]], main = "PC1 loadings")
+pca_env$loadings 
+pca_env$sdev / sum(pca_env$sdev)
 
 # Add PC1 and PC2 environmental data
-env.data <- data.frame(env.data, PC1 = scale(pca.env$scores[,1]), PC2 = scale(pca.env$scores[,2]))
-rhau <- merge(nest.data, env.data, all.x = TRUE)
+env_data <- data.frame(env_data, PC1 = scale(pca_env$scores[,1]), PC2 = scale(pca_env$scores[,2]))
+rhau <- merge(nest_data, env_data, all.x = TRUE)
 summary(rhau)
 
 #---------------------------------
@@ -88,7 +94,7 @@ mod2 <- stan_glmer(cbind(LastCheck,Egg-LastCheck) ~ Island + (1 | Site) + (Islan
 summary(mod2, prob = c(0.025,0.5,0.975))
 launch_shinystan(mod2)
 
-# Inter-island differences, varying among years, plus first PC.
+# Inter-island differences, varying among years, plus first PC
 mod3 <- stan_glmer(cbind(LastCheck,Egg-LastCheck) ~ Island + PC1 + (1 | Site) + (Island | Year),
                    data =  rhau,
                    family = binomial(link = logit),
@@ -164,10 +170,15 @@ mod4vs6
 
 ## Correlation plot of covariates
 dev.new()
+<<<<<<< HEAD:analysis/RhAu_BayesGLMM_script.R
+dat <- subset(rhau, select = c(sst_spring, sst_summer, mei_avg, cu_spring, 
+                                 cu_summer, st_onset, st_length, pdo_index))
+=======
 dat <- subset(rhau, select = c(sst.DI.spring, sst.PI.spring, mei.avg, cu.spring, 
                               st.onset, pdo.index))
 colnames(dat) <- c("SST spring (DI)", "SST spring (PI)", "MEI", "Coastal Upwelling (Spring)", 
                    "Spring Transition (Onset)", "PDO Index")
+>>>>>>> master:analysis/rhau_BayesGLMM2.R
 corrplot(cor(dat), method = "ellipse")
 
 ## Model validation by graphical posterior predictive checking
@@ -205,8 +216,8 @@ newdata <- data.frame(Year = rep(YY, each = 2), Site = "newsite",
                       Island = rep(c("DI","PI"), length(YY)))
 pfit <- posterior_linpred(mod2, transform = TRUE, re.form = ~ (1 | Year), newdata = newdata)
 pobs <- aggregate(cbind(Egg, LastCheck) ~ Year + Island, data = rhau, sum)
-pobs.ci <- binconf(pobs$LastCheck, n = pobs$Egg)
-eval.points <- range(pobs.ci, apply(pfit,2,quantile,c(0.025,0.975)))
+pobs_ci <- binconf(pobs$LastCheck, n = pobs$Egg)
+eval.points <- range(pobs_ci, apply(pfit,2,quantile,c(0.025,0.975)))
 eval.points <- seq(min(eval.points), max(eval.points), length = 300)
 xyDI <- pfit[,newdata$Island=="DI"]
 pxyDI <- t(apply(xyDI, 2, function(x) 
@@ -219,7 +230,7 @@ pxyPI <- t(apply(xyPI, 2, function(x)
 plot(newdata$Year[newdata$Island=="PI"], apply(pfit[,newdata$Island=="PI"],2,median), 
      las = 1, cex.axis = 1.2, cex.lab = 1.5, type = "l", lwd = 3, col = "cornflowerblue",
      xlab = "Year", ylab = "Probability of fledging", 
-     ylim = range(pobs.ci, apply(pfit,2,quantile,c(0.025,0.975))), 
+     ylim = range(pobs_ci, apply(pfit,2,quantile,c(0.025,0.975))), 
      xaxs = "i", xaxt = "n", yaxs = "i")
 lines(newdata$Year[newdata$Island=="DI"], apply(pfit[,newdata$Island=="DI"],2,median),
       lwd = 3, col = "darkgray")
@@ -248,8 +259,8 @@ YYDI <- pobs$Year[pobs$Island=="DI"]
 YYDI <- YYDI + c(0.1, rep(0.05, length(YYDI) - 2), -0.05)
 points(YYDI, pobs.ci[pobs$Island=="DI","PointEst"], 
        col = "darkgray", pch = 16, cex = 1.5)
-segments(x0 = YYDI, y0 = pobs.ci[pobs$Island=="DI","Lower"],
-         y1 = pobs.ci[pobs$Island=="DI","Upper"], col = "darkgray")
+segments(x0 = YYDI, y0 = pobs_ci[pobs$Island=="DI","Lower"],
+         y1 = pobs_ci[pobs$Island=="DI","Upper"], col = "darkgray")
 
 legend("topleft", c("Protection","Destruction"), lwd = 3, pch = c(15,16), 
        col = c("cornflowerblue","darkgray"))
