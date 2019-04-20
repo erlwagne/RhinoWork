@@ -73,15 +73,14 @@ colnames(cui)[1] <- "year"
 cui <- mutate(cui, cui_spring = rowMeans(select(cui, Mar:May)), 
               cui_summer = rowMeans(select(cui, Jun:Aug)))
 
-# Merge environmental covariates into site-level nest data
-
-# env_data <- subset(rhau_agg, Island == "DI", 
-#                    select = c(Year, sst_spring, sst_summer, mei_avg, cu_spring, 
-#                               cu_summer, st_onset, st_length, pdo_index))
-# names(env_data) <- gsub("sst_", "sst_DI_", names(env_data))
-# env_data <- data.frame(env_data, 
-#                        sst_PI_spring = rhau_agg$sst_spring[rhau_agg$Island=="PI"],
-#                        sst_PI_summer = rhau_agg$sst_summer[rhau_agg$Island=="PI"])
+# Assemble covariate data
+env_data <- data.frame(brood_year = Reduce(intersect, list(pdo$brood_year, mei$brood_year, 
+                                                            sst_DI$year, sst_PI$year, cui$year)))
+env_data <- mutate(env_data, pdo_index = pdo$pdo_index[match(brood_year, pdo$brood_year)],
+                   mei_avg = mei$mei_avg[match(brood_year, mei$brood_year)],
+                   sst_DI_spring = sst_DI$sst_spring[match(brood_year, sst_DI$year)],
+                   sst_PI_spring = sst_PI$sst_spring[match(brood_year, sst_PI$year)],
+                   cui_spring = cui$cui_spring[match(brood_year, cui$year)])
 
 #---------------------------------
 # PCA of Oceanographic Predictors
