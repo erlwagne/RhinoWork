@@ -10,16 +10,43 @@ library(sm)
 library(loo)
 library(denstrip)
 library(yarrr)
+library(corrplot)
 
 ## Read data
 nest.data <- read.csv(file.path("~","R","RhinoWork","data","RhAu2.csv"), fileEncoding="UTF-8-BOM") ## Nest data at site level
 rhau.agg <- read.csv(file.path("~","R","RhinoWork","data","RhAu4.csv"), header = TRUE)
 
 # Merge environmental covariates into site-level nest data
-env.data <- subset(rhau.agg, select = c(Island, Year, sst.sep:pdo.index))
+env.data <- subset(rhau.agg, Island == "DI", 
+                   select = c(Year, sst.spring, sst.summer, mei.avg, cu.spring, 
+                              cu.summer, st.onset, st.length, pdo.index))
+names(env.data) <- gsub("sst.", "sst.DI.", names(env.data))
+env.data <- data.frame(env.data, 
+                       sst.PI.spring = rhau.agg$sst.spring[rhau.agg$Island=="PI"],
+                       sst.PI.summer = rhau.agg$sst.summer[rhau.agg$Island=="PI"])
+
+#---------------------------------
+# PCA of Oceanographic Predictors
+#---------------------------------
+
+pca.env <- princomp(~ sst.DI.spring + sst.PI.spring + mei.avg + cu.spring + st.onset + pdo.index, 
+                    data = env.data, cor = TRUE)
+dev.new()
+par(mfrow = c(3,1))
+plot(pca.env)  # scree plot
+biplot(pca.env) # biplot of PCAs and oceanographic indicators
+barplot(pca.env$loadings[,1], names.arg = dimnames(pca.env$loadings)[[1]], main = "PC1 loadings")
+pca.env$loadings 
+pca.env$sdev / sum(pca.env$sdev)
+
+# Add PC1 and PC2 environmental data
+env.data <- data.frame(env.data, PC1 = scale(pca.env$scores[,1]), PC2 = scale(pca.env$scores[,2]))
 rhau <- merge(nest.data, env.data, all.x = TRUE)
-dim(rhau)
-head(rhau)
+summary(rhau)
+
+#---------------------------------
+# GLMMs
+#---------------------------------
 
 ## Hierarchical Bayesian binomial models with rstanarm ##
 ## Reproductive Success ##
@@ -61,17 +88,84 @@ mod2 <- stan_glmer(cbind(LastCheck,Egg-LastCheck) ~ Island + (1 | Site) + (Islan
 summary(mod2, prob = c(0.025,0.5,0.975))
 launch_shinystan(mod2)
 
+# Inter-island differences, varying among years, plus first PC.
+mod3 <- stan_glmer(cbind(LastCheck,Egg-LastCheck) ~ Island + PC1 + (1 | Site) + (Island | Year),
+                   data =  rhau,
+                   family = binomial(link = logit),
+                   prior = normal(0,5),
+                   prior_intercept = normal(0,5),
+                   prior_covariance = decov(),
+                   chains = 3, iter = 2000, warmup = 1000, cores = 3)
+
+summary(mod3, prob = c(0.025,0.5,0.975))
+launch_shinystan(mod3)
+
+mod4 <- stan_glmer(cbind(LastCheck,Egg-LastCheck) ~ Island + PC2 + (1 | Site) + (Island | Year),
+                   data =  rhau,
+                   family = binomial(link = logit),
+                   prior = normal(0,5),
+                   prior_intercept = normal(0,5),
+                   prior_covariance = decov(),
+                   chains = 3, iter = 2000, warmup = 1000, cores = 3)
+
+summary(mod4, prob = c(0.025,0.5,0.975))
+launch_shinystan(mod4)
+
+mod5 <- stan_glmer(cbind(LastCheck,Egg-LastCheck) ~ Island + PC1 + (1 | Site),
+                   data =  rhau,
+                   family = binomial(link = logit),
+                   prior = normal(0,5),
+                   prior_intercept = normal(0,5),
+                   prior_covariance = decov(),
+                   chains = 3, iter = 2000, warmup = 1000, cores = 3)
+
+summary(mod5, prob = c(0.025,0.5,0.975))
+launch_shinystan(mod5)
+
+mod6 <- stan_glmer(cbind(LastCheck,Egg-LastCheck) ~ Island + PC2 + (1 | Site),
+                   data =  rhau,
+                   family = binomial(link = logit),
+                   prior = normal(0,5),
+                   prior_intercept = normal(0,5),
+                   prior_covariance = decov(),
+                   chains = 3, iter = 2000, warmup = 1000, cores = 3)
+
+summary(mod6, prob = c(0.025,0.5,0.975))
+launch_shinystan(mod6)
+
 ## Model selection by approximate leave-one-out cross-validation
-loos <-  list(mod0 = loo(mod0), mod1 = loo(mod1), mod2 = loo(mod2))
+
+loos <-  list(mod0 = loo(mod0), mod1 = loo(mod1), mod2 = loo(mod2), mod3 = loo(mod3), mod4 = loo(mod4),
+              mod5 = loo(mod5), mod6 = loo(mod6))
 mod_sel <- loo::compare(loos$mod0, loos$mod1, loos$mod2)
 mod2vs1 <- loo::compare(loos$mod2, loos$mod1)
 mod1vs0 <- loo::compare(loos$mod1, loos$mod0)
 mod2vs0 <- loo::compare(loos$mod2, loos$mod0)
+mod2vs3 <- loo::compare(loos$mod2, loos$mod3)
+mod2vs4 <- loo::compare(loos$mod2, loos$mod4)
+mod3vs4 <- loo::compare(loos$mod3, loos$mod4)
+mod3vs5 <- loo::compare(loos$mod3, loos$mod5)
+mod4vs6 <- loo::compare(loos$mod4, loos$mod6)
 
 mod_sel
 mod2vs1
 mod1vs0
 mod2vs0
+mod2vs3
+mod2vs4
+mod3vs4
+mod3vs5
+mod4vs6
+
+#-------------------
+# FIGURES
+#-------------------
+
+## Correlation plot of covariates
+dev.new()
+dat <- subset(rhau, select = c(sst.spring, sst.summer, mei.avg, cu.spring, 
+                                 cu.summer, st.onset, st.length, pdo.index))
+corrplot(cor(dat), method = "ellipse")
 
 ## Model validation by graphical posterior predictive checking
 # default plot: marginal distribution of data and posterior predictive distribution
