@@ -144,6 +144,7 @@ launch_shinystan(mod6)
 loos <-  list(mod0 = loo(mod0), mod1 = loo(mod1), mod2 = loo(mod2), mod3 = loo(mod3), mod4 = loo(mod4),
               mod5 = loo(mod5), mod6 = loo(mod6))
 mod_sel <- loo::compare(loos$mod0, loos$mod1, loos$mod2)
+mod_sel_full <- loo::compare(loos$mod0, loos$mod1, loos$mod2, loos$mod3, loos$mod4, loos$mod5, loos$mod6)
 mod2vs1 <- loo::compare(loos$mod2, loos$mod1)
 mod1vs0 <- loo::compare(loos$mod1, loos$mod0)
 mod2vs0 <- loo::compare(loos$mod2, loos$mod0)
@@ -169,8 +170,15 @@ mod4vs6
 
 ## Correlation plot of covariates
 dev.new()
+<<<<<<< HEAD:analysis/RhAu_BayesGLMM_script.R
 dat <- subset(rhau, select = c(sst_spring, sst_summer, mei_avg, cu_spring, 
                                  cu_summer, st_onset, st_length, pdo_index))
+=======
+dat <- subset(rhau, select = c(sst.DI.spring, sst.PI.spring, mei.avg, cu.spring, 
+                              st.onset, pdo.index))
+colnames(dat) <- c("SST spring (DI)", "SST spring (PI)", "MEI", "Coastal Upwelling (Spring)", 
+                   "Spring Transition (Onset)", "PDO Index")
+>>>>>>> master:analysis/rhau_BayesGLMM2.R
 corrplot(cor(dat), method = "ellipse")
 
 ## Model validation by graphical posterior predictive checking
