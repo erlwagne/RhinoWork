@@ -94,7 +94,7 @@ mod2 <- stan_glmer(cbind(LastCheck,Egg-LastCheck) ~ Island + (1 | Site) + (Islan
 summary(mod2, prob = c(0.025,0.5,0.975))
 launch_shinystan(mod2)
 
-# Inter-island differences, varying among years, plus first PC
+# Inter-island differences, varying among years, plus PC1
 mod3 <- stan_glmer(cbind(LastCheck,Egg-LastCheck) ~ Island + PC1 + (1 | Site) + (Island | Year),
                    data =  rhau,
                    family = binomial(link = logit),
@@ -106,6 +106,7 @@ mod3 <- stan_glmer(cbind(LastCheck,Egg-LastCheck) ~ Island + PC1 + (1 | Site) + 
 summary(mod3, prob = c(0.025,0.5,0.975))
 launch_shinystan(mod3)
 
+# Inter-island differences, varying among years, plus PC2
 mod4 <- stan_glmer(cbind(LastCheck,Egg-LastCheck) ~ Island + PC2 + (1 | Site) + (Island | Year),
                    data =  rhau,
                    family = binomial(link = logit),
