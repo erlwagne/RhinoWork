@@ -39,7 +39,7 @@ mei <- read.csv(file.path(data_path, "MEI.csv"))
 sst_DI <- read.csv(file.path(data_path,"DI.sst.m.csv"), skip = 8)[,1:2]
 colnames(sst_DI) <- c("date","sst")
 sst_DI$sst[sst_DI$sst == -32767] <- NA
-sst_DI$Date <- mdy(sst_DI$Date)
+sst_DI$Date <- mdy(sst_DI$date)
 
 sst_PI <- read.csv(file.path(data_path,"PI.sst.m.csv"), skip = 8)[,1:2]
 colnames(sst_PI) <- c("date","sst")
