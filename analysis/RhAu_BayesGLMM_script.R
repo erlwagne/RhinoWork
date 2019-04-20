@@ -12,6 +12,8 @@ library(denstrip)
 library(yarrr)
 library(corrplot)
 library(lubridate)
+library(tidyr)
+library(dplyr)
 
 #--------------------------
 # DATA  
@@ -24,32 +26,52 @@ nest_data <- read.csv(file.path(data_path,"RhAu2.csv"), fileEncoding="UTF-8-BOM"
 
 # PDO from ERSST V3b https://www.esrl.noaa.gov/psd/pdo/ Using EOF from 1920 to 2014 for N Pacific
 # Monthly 1854-2019
-pdo <- read.csv(file.path(data_path, "pdo.timeseries.ersstv3b.csv"))
+pdo <- read.csv(file.path(data_path, "pdo.timeseries.ersstv3b.csv"), na.strings = "-9999.000")
 colnames(pdo)[2] <- "pdo"
-pdo$pdo[pdo$pdo == -9999] <- NA # na.strings doesn't work!?
 pdo$Date <- ymd(pdo$Date)
+pdo <- mutate(pdo, brood_year = ifelse(month(Date) > 8, year(Date) + 1, year(Date)),
+              month = month(Date, label = TRUE), Date = NULL)
+pdo <- spread(pdo, month, pdo)
+pdo <- select(pdo, c(brood_year, Sep:Dec, Jan:Aug))
+pdo <- data.frame(pdo, pdo_index = rowMeans(select(pdo, Nov:Mar)))
 
-# MEI v.2 2009-2018
+# MEI v.2 1979-2018
 # Wide format: rows are years, columns are months
-mei <- read.csv(file.path(data_path, "MEI.csv"))
+mei <- read.csv(file.path(data_path, "MEIv2.csv"))
+colnames(mei) <- tolower(colnames(mei))
+mei <- gather(mei, months, mei, decjan:novdec)
+mei <- mutate(mei, brood_year = ifelse(months %in% c("sepoct","octnov","novdec"), year + 1, year),
+              year = NULL)
+mei <- spread(mei, months, mei)
+mei <- select(mei, c(brood_year,sepoct,octnov,novdec,decjan,
+                     janfeb,febmar,marapr,aprmay,mayjun,junjul,julaug,augsep))
+mei <- data.frame(mei, mei_avg = rowMeans(select(mei, sepoct:augsep)))
 
 # Area-Averaged of Sea Surface Temperature at 11 microns (Day) monthly 4 km [MODIS-Aqua ()
 # at Protection and Destruction Island
 # Monthly 2009-2018
-sst_DI <- read.csv(file.path(data_path,"DI.sst.m.csv"), skip = 8)[,1:2]
+sst_DI <- read.csv(file.path(data_path,"DI.sst.m.csv"), skip = 8, na.strings = "-32767")[,1:2]
 colnames(sst_DI) <- c("date","sst")
-sst_DI$sst[sst_DI$sst == -32767] <- NA
-sst_DI$Date <- mdy(sst_DI$Date)
+sst_DI$date <- mdy(sst_DI$date)
+sst_DI <- mutate(sst_DI, year = year(date), month = month(date, label = TRUE), date = NULL)
+sst_DI <- spread(sst_DI, month, sst)
+sst_DI <- mutate(sst_DI, sst_spring = rowMeans(select(sst_DI, Mar:May)),
+                 sst_summer = rowMeans(select(sst_DI, Jun:Aug)))
 
-sst_PI <- read.csv(file.path(data_path,"PI.sst.m.csv"), skip = 8)[,1:2]
+sst_PI <- read.csv(file.path(data_path,"PI.sst.m.csv"), skip = 8, na.strings = "-32767")[,1:2]
 colnames(sst_PI) <- c("date","sst")
-sst_PI$sst[sst_PI$sst == -32767] <- NA
 sst_PI$date <- mdy_hm(sst_PI$date)
+sst_PI <- mutate(sst_PI, year = year(date), month = month(date, label = TRUE), date = NULL)
+sst_PI <- spread(sst_PI, month, sst)
+sst_PI <- mutate(sst_PI, sst_spring = rowMeans(select(sst_PI, Mar:May)), 
+                 sst_summer = rowMeans(select(sst_PI, Jun:Aug)))
 
 # Coastal Upwelling Index 48N 125W 1946-2018
 # Wide format: rows are years, columns are months
 cui <- read.csv(file.path(data_path,"CoastalUpwellingIndex.csv"))[,-1]
 colnames(cui)[1] <- "year"
+cui <- mutate(cui, cui_spring = rowMeans(select(cui, Mar:May)), 
+              cui_summer = rowMeans(select(cui, Jun:Aug)))
 
 # Merge environmental covariates into site-level nest data
 
