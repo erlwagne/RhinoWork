@@ -11,25 +11,55 @@ library(loo)
 library(denstrip)
 library(yarrr)
 library(corrplot)
+library(lubridate)
 
 #--------------------------
 # DATA  
 #--------------------------
 
-data.path <- 
+data_path <- file.path(getwd(),"data")
 
 # Nest success data
-nest_data <- read.csv(file.path("~","R","RhinoWork","data","RhAu2.csv"), fileEncoding="UTF-8-BOM") ## Nest data at site level
-rhau_agg <- read.csv(file.path("~","R","RhinoWork","data","RhAu4.csv"), header = TRUE)
+nest_data <- read.csv(file.path(data_path,"RhAu2.csv"), fileEncoding="UTF-8-BOM")
+
+# PDO from ERSST V3b https://www.esrl.noaa.gov/psd/pdo/ Using EOF from 1920 to 2014 for N Pacific
+# Monthly 1854-2019
+pdo <- read.csv(file.path(data_path, "pdo.timeseries.ersstv3b.csv"))
+colnames(pdo)[2] <- "pdo"
+pdo$pdo[pdo$pdo == -9999] <- NA # na.strings doesn't work!?
+pdo$Date <- ymd(pdo$Date)
+
+# MEI v.2 2009-2018
+# Wide format: rows are years, columns are months
+mei <- read.csv(file.path(data_path, "MEI.csv"))
+
+# Area-Averaged of Sea Surface Temperature at 11 microns (Day) monthly 4 km [MODIS-Aqua ()
+# at Protection and Destruction Island
+# Monthly 2009-2018
+sst_DI <- read.csv(file.path(data_path,"DI.sst.m.csv"), skip = 8)[,1:2]
+colnames(sst_DI) <- c("date","sst")
+sst_DI$sst[sst_DI$sst == -32767] <- NA
+sst_DI$Date <- mdy(sst_DI$Date)
+
+sst_PI <- read.csv(file.path(data_path,"PI.sst.m.csv"), skip = 8)[,1:2]
+colnames(sst_PI) <- c("date","sst")
+sst_PI$sst[sst_PI$sst == -32767] <- NA
+sst_PI$date <- mdy_hm(sst_PI$date)
+
+# Coastal Upwelling Index 48N 125W 1946-2018
+# Wide format: rows are years, columns are months
+cui <- read.csv(file.path(data_path,"CoastalUpwellingIndex.csv"))[,-1]
+colnames(cui)[1] <- "year"
 
 # Merge environmental covariates into site-level nest data
-env_data <- subset(rhau_agg, Island == "DI", 
-                   select = c(Year, sst_spring, sst_summer, mei_avg, cu_spring, 
-                              cu_summer, st_onset, st_length, pdo_index))
-names(env_data) <- gsub("sst_", "sst_DI_", names(env_data))
-env_data <- data.frame(env_data, 
-                       sst_PI_spring = rhau_agg$sst_spring[rhau_agg$Island=="PI"],
-                       sst_PI_summer = rhau_agg$sst_summer[rhau_agg$Island=="PI"])
+
+# env_data <- subset(rhau_agg, Island == "DI", 
+#                    select = c(Year, sst_spring, sst_summer, mei_avg, cu_spring, 
+#                               cu_summer, st_onset, st_length, pdo_index))
+# names(env_data) <- gsub("sst_", "sst_DI_", names(env_data))
+# env_data <- data.frame(env_data, 
+#                        sst_PI_spring = rhau_agg$sst_spring[rhau_agg$Island=="PI"],
+#                        sst_PI_summer = rhau_agg$sst_summer[rhau_agg$Island=="PI"])
 
 #---------------------------------
 # PCA of Oceanographic Predictors
