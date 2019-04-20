@@ -138,6 +138,7 @@ launch_shinystan(mod6)
 loos <-  list(mod0 = loo(mod0), mod1 = loo(mod1), mod2 = loo(mod2), mod3 = loo(mod3), mod4 = loo(mod4),
               mod5 = loo(mod5), mod6 = loo(mod6))
 mod_sel <- loo::compare(loos$mod0, loos$mod1, loos$mod2)
+mod_sel_full <- loo::compare(loos$mod0, loos$mod1, loos$mod2, loos$mod3, loos$mod4, loos$mod5, loos$mod6)
 mod2vs1 <- loo::compare(loos$mod2, loos$mod1)
 mod1vs0 <- loo::compare(loos$mod1, loos$mod0)
 mod2vs0 <- loo::compare(loos$mod2, loos$mod0)
@@ -163,8 +164,8 @@ mod4vs6
 
 ## Correlation plot of covariates
 dev.new()
-dat <- subset(rhau, select = c(sst.spring, sst.summer, mei.avg, cu.spring, 
-                                 cu.summer, st.onset, st.length, pdo.index))
+dat <- subset(rhau, select = c(sst.DI.spring, sst.PI.spring, mei.avg, cu.spring, 
+                              st.onset, pdo.index))
 corrplot(cor(dat), method = "ellipse")
 
 ## Model validation by graphical posterior predictive checking
