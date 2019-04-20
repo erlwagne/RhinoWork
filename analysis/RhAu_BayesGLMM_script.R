@@ -170,15 +170,11 @@ mod4vs6
 
 ## Correlation plot of covariates
 dev.new()
-<<<<<<< HEAD:analysis/RhAu_BayesGLMM_script.R
-dat <- subset(rhau, select = c(sst_spring, sst_summer, mei_avg, cu_spring, 
-                                 cu_summer, st_onset, st_length, pdo_index))
-=======
 dat <- subset(rhau, select = c(sst.DI.spring, sst.PI.spring, mei.avg, cu.spring, 
                               st.onset, pdo.index))
 colnames(dat) <- c("SST spring (DI)", "SST spring (PI)", "MEI", "Coastal Upwelling (Spring)", 
                    "Spring Transition (Onset)", "PDO Index")
->>>>>>> master:analysis/rhau_BayesGLMM2.R
+
 corrplot(cor(dat), method = "ellipse")
 
 ## Model validation by graphical posterior predictive checking
