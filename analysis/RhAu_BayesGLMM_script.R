@@ -96,7 +96,6 @@ biol_trans <- mutate(biol_trans, st_onset = yday(ydm(paste(year, st_onset, sep =
 biol_trans <- mutate(biol_trans, st_onset = replace_na(st_onset, 365), 
                      st_end = replace_na(st_end, 365))
 
-
 # Merge covariate data
 env_data <- Reduce(inner_join, list(select(pdo, c(year, pdo_index)), 
                                     select(mei, c(year, mei_avg)), 
