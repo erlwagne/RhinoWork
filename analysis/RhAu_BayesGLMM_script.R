@@ -49,21 +49,35 @@ mei <- data.frame(mei, mei_avg = rowMeans(select(mei, sepoct:augsep)))
 # Area-Averaged of Sea Surface Temperature at 11 microns (Day) monthly 4 km [MODIS-Aqua ()
 # at Protection and Destruction Island
 # Monthly 2009-2018
-sst_DI <- read.csv(file.path(data_path,"DI.sst.m.csv"), skip = 8, na.strings = "-32767")[,1:2]
+sst_DI <- read.csv(file.path(data_path,"SST_DI_2002_2019.csv"), skip = 8, na.strings = "-32767")[,1:2]
 colnames(sst_DI) <- c("date","sst")
-sst_DI$date <- mdy(sst_DI$date)
+sst_DI$date <- mdy_hm(sst_DI$date)
 sst_DI <- mutate(sst_DI, year = year(date), month = month(date, label = TRUE), date = NULL)
 sst_DI <- spread(sst_DI, month, sst)
-sst_DI <- mutate(sst_DI, sst_DI_spring = rowMeans(select(sst_DI, Mar:May)),
-                 sst_DI_summer = rowMeans(select(sst_DI, Jun:Aug)))
+sst_DI <- mutate(sst_DI, sst_DI_spring = rowMeans(select(sst_DI, Apr:Jun)),
+                 sst_DI_summer = rowMeans(select(sst_DI, Jul:Aug)))
 
-sst_PI <- read.csv(file.path(data_path,"PI.sst.m.csv"), skip = 8, na.strings = "-32767")[,1:2]
+sst_PI <- read.csv(file.path(data_path,"SST_PI_2002_2019.csv"), skip = 8, na.strings = "-32767")[,1:2]
 colnames(sst_PI) <- c("date","sst")
-sst_PI$date <- mdy_hm(sst_PI$date)
+sst_PI$date <- ymd_hms(sst_PI$date)
 sst_PI <- mutate(sst_PI, year = year(date), month = month(date, label = TRUE), date = NULL)
 sst_PI <- spread(sst_PI, month, sst)
-sst_PI <- mutate(sst_PI, sst_PI_spring = rowMeans(select(sst_PI, Mar:May)), 
-                 sst_PI_summer = rowMeans(select(sst_PI, Jun:Aug)))
+sst_PI <- mutate(sst_PI, sst_PI_spring = rowMeans(select(sst_PI, Apr:Jun)), 
+                 sst_PI_summer = rowMeans(select(sst_PI, Jul:Aug)))
+
+# Average monthly SST from DFO stations
+# Wide format: year x month
+sst_amph <- read.csv(file.path(data_path, grep("Amphitrite", list.files(data_path), value = TRUE)),
+                                   skip = 1, na.strings = "99.99")
+colnames(sst_amph) <- tolower(colnames(sst_amph))
+sst_amph <- mutate(sst_amph, sst_amph_spring = rowMeans(select(sst_amph, apr:jun)),
+                   sst_amph_summer = rowMeans(select(sst_amph, jul:aug)))
+
+sst_race <- read.csv(file.path(data_path, grep("Race_Rocks", list.files(data_path), value = TRUE)),
+                     skip = 1, na.strings = "99.99")
+colnames(sst_race) <- tolower(colnames(sst_race))
+sst_race <- mutate(sst_race, sst_race_spring = rowMeans(select(sst_race, apr:jun)),
+                   sst_race_summer = rowMeans(select(sst_race, jul:aug)))
 
 # Coastal Upwelling Index 48N 125W 1946-2018
 # Wide format: rows are years, columns are months
@@ -72,19 +86,33 @@ colnames(cui)[1] <- "year"
 cui <- mutate(cui, cui_spring = rowMeans(select(cui, Apr:Jun)), 
               cui_summer = rowMeans(select(cui, Jul:Aug)))
 
+# Biological spring transition from NWFSC Ocean Ecosystem Indicators
+# Long format, 1970-2018
+biol_trans <- read.csv(file.path(data_path, "biological_spring_transition_NWFSC.csv"),
+                       skip = 10, na.strings = "Never ", stringsAsFactors = FALSE)
+colnames(biol_trans) <- c("year","st_onset","st_end","st_duration")
+biol_trans <- mutate(biol_trans, st_onset = yday(ydm(paste(year, st_onset, sep = "-"))))
+biol_trans <- mutate(biol_trans, st_onset = replace_na(st_onset, 365), 
+                     st_end = replace_na(st_end, 365))
+
+
 # Merge covariate data
 env_data <- Reduce(inner_join, list(select(pdo, c(year, pdo_index)), 
                                     select(mei, c(year, mei_avg)), 
                                     select(sst_DI, c(year, sst_DI_spring, sst_DI_summer)), 
                                     select(sst_PI, c(year, sst_PI_spring, sst_PI_summer)),
-                                    select(cui, c(year, cui_spring, cui_summer))))
+                                    select(sst_amph, c(year, sst_amph_spring, sst_amph_summer)),
+                                    select(sst_race, c(year, sst_race_spring, sst_race_summer)),
+                                    select(cui, c(year, cui_spring, cui_summer)),
+                                    select(biol_trans, c(year, st_onset, st_duration))))
+                   
 
 
 #---------------------------------
 # PCA of Oceanographic Predictors
 #---------------------------------
 
-pca_env <- princomp(~ sst_DI_spring + sst_PI_spring + mei_avg + cu_spring + st_onset + pdo_index, 
+pca_env <- princomp(~ sst_DI_spring + sst_PI_spring + mei_avg + cui_spring + st_onset + pdo_index, 
                     data = env_data, cor = TRUE)
 dev.new()
 par(mfrow = c(3,1))
