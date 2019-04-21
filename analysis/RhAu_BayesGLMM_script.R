@@ -29,10 +29,10 @@ nest_data <- read.csv(file.path(data_path,"RhAu2.csv"), fileEncoding="UTF-8-BOM"
 pdo <- read.csv(file.path(data_path, "pdo.timeseries.ersstv3b.csv"), na.strings = "-9999.000")
 colnames(pdo)[2] <- "pdo"
 pdo$Date <- ymd(pdo$Date)
-pdo <- mutate(pdo, brood_year = ifelse(month(Date) > 8, year(Date) + 1, year(Date)),
+pdo <- mutate(pdo, year = ifelse(month(Date) > 8, year(Date) + 1, year(Date)),
               month = month(Date, label = TRUE), Date = NULL)
 pdo <- spread(pdo, month, pdo)
-pdo <- select(pdo, c(brood_year, Sep:Dec, Jan:Aug))
+pdo <- select(pdo, c(year, Sep:Dec, Jan:Aug))
 pdo <- data.frame(pdo, pdo_index = rowMeans(select(pdo, Nov:Mar)))
 
 # MEI v.2 1979-2018
@@ -40,10 +40,9 @@ pdo <- data.frame(pdo, pdo_index = rowMeans(select(pdo, Nov:Mar)))
 mei <- read.csv(file.path(data_path, "MEIv2.csv"))
 colnames(mei) <- tolower(colnames(mei))
 mei <- gather(mei, months, mei, decjan:novdec)
-mei <- mutate(mei, brood_year = ifelse(months %in% c("sepoct","octnov","novdec"), year + 1, year),
-              year = NULL)
+mei <- mutate(mei, year = ifelse(months %in% c("sepoct","octnov","novdec"), year + 1, year))
 mei <- spread(mei, months, mei)
-mei <- select(mei, c(brood_year,sepoct,octnov,novdec,decjan,
+mei <- select(mei, c(year,sepoct,octnov,novdec,decjan,
                      janfeb,febmar,marapr,aprmay,mayjun,junjul,julaug,augsep))
 mei <- data.frame(mei, mei_avg = rowMeans(select(mei, sepoct:augsep)))
 
@@ -55,16 +54,16 @@ colnames(sst_DI) <- c("date","sst")
 sst_DI$date <- mdy(sst_DI$date)
 sst_DI <- mutate(sst_DI, year = year(date), month = month(date, label = TRUE), date = NULL)
 sst_DI <- spread(sst_DI, month, sst)
-sst_DI <- mutate(sst_DI, sst_spring = rowMeans(select(sst_DI, Mar:May)),
-                 sst_summer = rowMeans(select(sst_DI, Jun:Aug)))
+sst_DI <- mutate(sst_DI, sst_DI_spring = rowMeans(select(sst_DI, Mar:May)),
+                 sst_DI_summer = rowMeans(select(sst_DI, Jun:Aug)))
 
 sst_PI <- read.csv(file.path(data_path,"PI.sst.m.csv"), skip = 8, na.strings = "-32767")[,1:2]
 colnames(sst_PI) <- c("date","sst")
 sst_PI$date <- mdy_hm(sst_PI$date)
 sst_PI <- mutate(sst_PI, year = year(date), month = month(date, label = TRUE), date = NULL)
 sst_PI <- spread(sst_PI, month, sst)
-sst_PI <- mutate(sst_PI, sst_spring = rowMeans(select(sst_PI, Mar:May)), 
-                 sst_summer = rowMeans(select(sst_PI, Jun:Aug)))
+sst_PI <- mutate(sst_PI, sst_PI_spring = rowMeans(select(sst_PI, Mar:May)), 
+                 sst_PI_summer = rowMeans(select(sst_PI, Jun:Aug)))
 
 # Coastal Upwelling Index 48N 125W 1946-2018
 # Wide format: rows are years, columns are months
@@ -73,14 +72,13 @@ colnames(cui)[1] <- "year"
 cui <- mutate(cui, cui_spring = rowMeans(select(cui, Mar:May)), 
               cui_summer = rowMeans(select(cui, Jun:Aug)))
 
-# Assemble covariate data
-env_data <- data.frame(brood_year = Reduce(intersect, list(pdo$brood_year, mei$brood_year, 
-                                                            sst_DI$year, sst_PI$year, cui$year)))
-env_data <- mutate(env_data, pdo_index = pdo$pdo_index[match(brood_year, pdo$brood_year)],
-                   mei_avg = mei$mei_avg[match(brood_year, mei$brood_year)],
-                   sst_DI_spring = sst_DI$sst_spring[match(brood_year, sst_DI$year)],
-                   sst_PI_spring = sst_PI$sst_spring[match(brood_year, sst_PI$year)],
-                   cui_spring = cui$cui_spring[match(brood_year, cui$year)])
+# Merge covariate data
+env_data <- Reduce(inner_join, list(select(pdo, c(year, pdo_index)), 
+                                    select(mei, c(year, mei_avg)), 
+                                    select(sst_DI, c(year, sst_DI_spring, sst_DI_summer)), 
+                                    select(sst_PI, c(year, sst_PI_spring, sst_PI_summer)),
+                                    select(cui, c(year, cui_spring, cui_summer))))
+
 
 #---------------------------------
 # PCA of Oceanographic Predictors
