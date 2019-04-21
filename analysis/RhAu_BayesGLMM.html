@@ -2891,7 +2891,8 @@ sst_DI &lt;- spread(sst_DI, month, sst)
 sst_DI &lt;- mutate(sst_DI, sst_DI_spring = rowMeans(select(sst_DI, Apr:Jun)),
                  sst_DI_summer = rowMeans(select(sst_DI, Jul:Aug)))
 
-sst_PI &lt;- read.csv(here::here(&quot;data&quot;,&quot;SST_PI_2002_2019.csv&quot;), skip = 8, na.strings = &quot;-32767&quot;)[,1:2]
+sst_PI &lt;- read.csv(here::here(&quot;data&quot;,&quot;SST_PI_2002_2019.csv&quot;), skip = 8, 
+                   na.strings = &quot;-32767&quot;)[,1:2]
 colnames(sst_PI) &lt;- c(&quot;date&quot;,&quot;sst&quot;)
 sst_PI$date &lt;- ymd_hms(sst_PI$date)
 sst_PI &lt;- mutate(sst_PI, year = year(date), month = month(date, label = TRUE), date = NULL)

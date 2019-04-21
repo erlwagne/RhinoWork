@@ -106,17 +106,49 @@ env_data <- Reduce(inner_join, list(select(pdo, c(year, pdo_index)),
                                     select(biol_trans, c(year, st_onset, st_duration))))
 
 #---------------------------------
-# PCA of Oceanographic Predictors
+# PCA of Oceanographic Indicators
 #---------------------------------
 
-pca_env <- prcomp(~ sst_DI_spring + sst_PI_spring + mei_avg + cui_spring + st_onset + pdo_index, 
+## Correlation plot of indicators
+dat <- select(env_data, c(pdo_index, mei_avg, sst_DI_spring, sst_DI_summer, 
+                          sst_PI_spring, sst_PI_summer, sst_amph_spring, sst_amph_summer, 
+                          sst_race_spring, sst_race_summer, cui_spring, cui_summer, 
+                          st_onset, st_duration))
+# colnames(dat) <- c("SST spring (DI)", "SST spring (PI)", "MEI", "Coastal Upwelling (Spring)", 
+#                    "Spring Transition (Onset)", "PDO Index")
+dev.new()
+corrplot(cor(dat, use = "pairwise"), method = "ellipse", diag = FALSE)
+
+## Pairs plot of indicators
+dev.new(width = 12, height = 12)
+pairs(select(env_data, c(pdo_index, mei_avg, sst_DI_spring, sst_DI_summer, 
+                          sst_PI_spring, sst_PI_summer, sst_amph_spring, sst_amph_summer, 
+                          sst_race_spring, sst_race_summer, cui_spring, cui_summer, 
+                          st_onset, st_duration)), 
+      gap = 0.2, pch = 16, cex = 1.2, col = transparent("slategray",0.6))
+
+## Stacked time series plots of indicators
+c1 <- "slategray"
+
+dev.new(width = 7, height = 12)
+par(mfrow = c(4,1))
+
+plot(env_data$year, env_data$pdo_index, pch = "", las = 1, xlab = "", ylab = "PDO",
+     cex.lab = 1.2, cex.axis = 1, xaxt = "n", bty = "n")
+abline(h = 0)
+abline(v = env_data$year, col = "lightgray")
+lines(env_data$year, env_data$pdo_index, col = c1, lwd = 3)
+
+# PCA
+pca_env <- prcomp(~ pdo_index + mei_avg + sst_DI_spring + sst_PI_spring + cui_spring + cui_summer +
+                    st_onset + st_duration, 
                   data = env_data, scale = TRUE)
 
 pca_env            # rotation matrix gives the loadings
 summary(pca_env)   # proportion of variance associated with each PC
 
-## Plots
-dev.new()
+## PCA plots
+dev.new(width = 12, height = 12)
 par(mfcol = c(2,2))
 # scree plot
 imp <- summary(pca_env)$importance["Proportion of Variance",]
@@ -255,15 +287,6 @@ mod4vs6
 #-------------------
 # FIGURES
 #-------------------
-
-## Correlation plot of covariates
-dev.new()
-dat <- subset(rhau, select = c(sst.DI.spring, sst.PI.spring, mei.avg, cu.spring, 
-                               st.onset, pdo.index))
-colnames(dat) <- c("SST spring (DI)", "SST spring (PI)", "MEI", "Coastal Upwelling (Spring)", 
-                   "Spring Transition (Onset)", "PDO Index")
-
-corrplot(cor(dat), method = "ellipse")
 
 ## Model validation by graphical posterior predictive checking
 # default plot: marginal distribution of data and posterior predictive distribution
