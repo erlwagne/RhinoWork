@@ -23,6 +23,7 @@ data_path <- file.path(getwd(),"data")
 
 # Nest success data
 nest_data <- read.csv(file.path(data_path,"RhAu2.csv"), fileEncoding="UTF-8-BOM")
+names(nest_data) <- gsub("lastcheck", "last_check", tolower(names(nest_data)))
 
 # PDO from ERSST V3b https://www.esrl.noaa.gov/psd/pdo/ Using EOF from 1920 to 2014 for N Pacific
 # Monthly 1854-2019
@@ -106,26 +107,37 @@ env_data <- Reduce(inner_join, list(select(pdo, c(year, pdo_index)),
                                     select(cui, c(year, cui_spring, cui_summer)),
                                     select(biol_trans, c(year, st_onset, st_duration))))
                    
-
-
 #---------------------------------
 # PCA of Oceanographic Predictors
 #---------------------------------
 
-pca_env <- princomp(~ sst_DI_spring + sst_PI_spring + mei_avg + cui_spring + st_onset + pdo_index, 
-                    data = env_data, cor = TRUE)
-dev.new()
-par(mfrow = c(3,1))
-plot(pca_env)  # scree plot
-biplot(pca_env) # biplot of PCAs and oceanographic indicators
-barplot(pca_env$loadings[,1], names.arg = dimnames(pca_env$loadings)[[1]], main = "PC1 loadings")
-pca_env$loadings 
-pca_env$sdev / sum(pca_env$sdev)
+pca_env <- prcomp(~ sst_DI_spring + sst_PI_spring + mei_avg + cui_spring + st_onset + pdo_index, 
+                    data = env_data, scale = TRUE)
 
-# Add PC1 and PC2 environmental data
-env_data <- data.frame(env_data, PC1 = scale(pca_env$scores[,1]), PC2 = scale(pca_env$scores[,2]))
-rhau <- merge(nest_data, env_data, all.x = TRUE)
-summary(rhau)
+pca_env            # rotation matrix gives the loadings
+summary(pca_env)   # proportion of variance associated with each PC
+
+## Plots
+dev.new()
+par(mfcol = c(2,2))
+# scree plot
+imp <- summary(pca_env)$importance["Proportion of Variance",]
+barplot(imp, xlab = "", ylab = "Proportion of variance", names.arg = names(imp))   
+# biplot of PCAs and oceanographic indicators
+biplot(pca_env) 
+# PC1 loadings
+xloc <- barplot(pca_env$rotation[,"PC1"], xaxt = "n", main = "PC1 loadings")
+text(xloc, par("usr")[3], labels = dimnames(pca_env$rotation)[[1]], adj = c(1,1), srt = 45, xpd = TRUE)
+# PC2 loadings
+xloc <- barplot(pca_env$rotation[,"PC2"], xaxt = "n", main = "PC2 loadings")
+text(xloc, par("usr")[3], labels = dimnames(pca_env$rotation)[[1]], adj = c(1,1), srt = 45, xpd = TRUE)
+
+# Add PC1 and PC2 to covariate data
+scores <- predict(pca_env, newdata = env_data)
+env_data <- data.frame(env_data, PC1 = scale(scores[,"PC1"]), PC2 = scale(scores[,"PC2"]))
+
+# Merge PC1 and PC2 into nest data
+rhau <- left_join(nest_data, select(env_data, c(year, PC1, PC2)))
 
 #---------------------------------
 # GLMMs
