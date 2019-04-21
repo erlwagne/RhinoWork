@@ -3,7 +3,7 @@
 ## Set graphics device
 if(.Platform$OS.type == "windows") options(device = windows) else options(device = quartz)
 
-library(here::here)
+library(here)
 library(rstanarm)
 library(bayesplot)
 library(Hmisc)
