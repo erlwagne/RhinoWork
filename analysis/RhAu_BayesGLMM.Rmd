@@ -38,8 +38,8 @@ This is a Rhinoceros Auklet from the Protection Island colony:
 First we load the libraries we'll use.
 
 ```{r getting_started, message = FALSE, warning = FALSE}
-if(!require(here::here)) install.packages("here::here")
-library(here::here)
+if(!require(here)) install.packages("here::here")
+library(here)
 if(!require(rstanarm)) install.package("rstanarm")
 library(rstanarm)
 if(!require(bayesplot)) install.package("bayesplot")
