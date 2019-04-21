@@ -69,8 +69,8 @@ sst_PI <- mutate(sst_PI, sst_PI_spring = rowMeans(select(sst_PI, Mar:May)),
 # Wide format: rows are years, columns are months
 cui <- read.csv(file.path(data_path,"CoastalUpwellingIndex.csv"))[,-1]
 colnames(cui)[1] <- "year"
-cui <- mutate(cui, cui_spring = rowMeans(select(cui, Mar:May)), 
-              cui_summer = rowMeans(select(cui, Jun:Aug)))
+cui <- mutate(cui, cui_spring = rowMeans(select(cui, Apr:Jun)), 
+              cui_summer = rowMeans(select(cui, Jul:Aug)))
 
 # Merge covariate data
 env_data <- Reduce(inner_join, list(select(pdo, c(year, pdo_index)), 
