@@ -69,7 +69,7 @@ sst_PI <- mutate(sst_PI, sst_PI_spring = rowMeans(select(sst_PI, Apr:Jun)),
 # Average monthly SST from DFO stations
 # Wide format: year x month
 sst_amph <- read.csv(file.path(data_path, grep("Amphitrite", list.files(data_path), value = TRUE)),
-                                   skip = 1, na.strings = "99.99")
+                     skip = 1, na.strings = "99.99")
 colnames(sst_amph) <- tolower(colnames(sst_amph))
 sst_amph <- mutate(sst_amph, sst_amph_spring = rowMeans(select(sst_amph, apr:jun)),
                    sst_amph_summer = rowMeans(select(sst_amph, jul:aug)))
@@ -106,13 +106,13 @@ env_data <- Reduce(inner_join, list(select(pdo, c(year, pdo_index)),
                                     select(sst_race, c(year, sst_race_spring, sst_race_summer)),
                                     select(cui, c(year, cui_spring, cui_summer)),
                                     select(biol_trans, c(year, st_onset, st_duration))))
-                   
+
 #---------------------------------
 # PCA of Oceanographic Predictors
 #---------------------------------
 
 pca_env <- prcomp(~ sst_DI_spring + sst_PI_spring + mei_avg + cui_spring + st_onset + pdo_index, 
-                    data = env_data, scale = TRUE)
+                  data = env_data, scale = TRUE)
 
 pca_env            # rotation matrix gives the loadings
 summary(pca_env)   # proportion of variance associated with each PC
@@ -149,7 +149,7 @@ rhau <- left_join(nest_data, select(env_data, c(year, PC1, PC2)))
 ## Random effects of site and year
 
 # Intercept-only model 
-mod0 <- stan_glmer(cbind(LastCheck,Egg-LastCheck) ~ (1 | Site) + (1 | Year),
+mod0 <- stan_glmer(cbind(last_check,egg-last_check) ~ (1 | site) + (1 | year),
                    data =  rhau,
                    family = binomial(link = logit),
                    prior_intercept = normal(0,5),
@@ -160,7 +160,7 @@ summary(mod0, prob = c(0.025,0.5,0.975))
 launch_shinystan(mod0)
 
 # Inter-island differences, constant across years
-mod1 <- stan_glmer(cbind(LastCheck,Egg-LastCheck) ~ Island + (1 | Site) + (1 | Year),
+mod1 <- stan_glmer(cbind(last_check,egg-last_check) ~ island + (1 | site) + (1 | year),
                    data =  rhau,
                    family = binomial(link = logit),
                    prior = normal(0,5),
@@ -172,7 +172,7 @@ summary(mod1, prob = c(0.025,0.5,0.975))
 launch_shinystan(mod1)
 
 # Inter-island differences, varying among years
-mod2 <- stan_glmer(cbind(LastCheck,Egg-LastCheck) ~ Island + (1 | Site) + (Island | Year),
+mod2 <- stan_glmer(cbind(last_check,egg-last_check) ~ island + (1 | site) + (island | year),
                    data =  rhau,
                    family = binomial(link = logit),
                    prior = normal(0,5),
@@ -184,7 +184,7 @@ summary(mod2, prob = c(0.025,0.5,0.975))
 launch_shinystan(mod2)
 
 # Inter-island differences, varying among years, plus PC1
-mod3 <- stan_glmer(cbind(LastCheck,Egg-LastCheck) ~ Island + PC1 + (1 | Site) + (Island | Year),
+mod3 <- stan_glmer(cbind(last_check,egg-last_check) ~ island + PC1 + (1 | site) + (island | year),
                    data =  rhau,
                    family = binomial(link = logit),
                    prior = normal(0,5),
@@ -196,7 +196,7 @@ summary(mod3, prob = c(0.025,0.5,0.975))
 launch_shinystan(mod3)
 
 # Inter-island differences, varying among years, plus PC2
-mod4 <- stan_glmer(cbind(LastCheck,Egg-LastCheck) ~ Island + PC2 + (1 | Site) + (Island | Year),
+mod4 <- stan_glmer(cbind(last_check,egg-last_check) ~ island + PC2 + (1 | site) + (island | year),
                    data =  rhau,
                    family = binomial(link = logit),
                    prior = normal(0,5),
@@ -207,7 +207,7 @@ mod4 <- stan_glmer(cbind(LastCheck,Egg-LastCheck) ~ Island + PC2 + (1 | Site) + 
 summary(mod4, prob = c(0.025,0.5,0.975))
 launch_shinystan(mod4)
 
-mod5 <- stan_glmer(cbind(LastCheck,Egg-LastCheck) ~ Island + PC1 + (1 | Site),
+mod5 <- stan_glmer(cbind(last_check,egg-last_check) ~ island + PC1 + (1 | site),
                    data =  rhau,
                    family = binomial(link = logit),
                    prior = normal(0,5),
@@ -218,7 +218,7 @@ mod5 <- stan_glmer(cbind(LastCheck,Egg-LastCheck) ~ Island + PC1 + (1 | Site),
 summary(mod5, prob = c(0.025,0.5,0.975))
 launch_shinystan(mod5)
 
-mod6 <- stan_glmer(cbind(LastCheck,Egg-LastCheck) ~ Island + PC2 + (1 | Site),
+mod6 <- stan_glmer(cbind(last_check,egg-last_check) ~ island + PC2 + (1 | site),
                    data =  rhau,
                    family = binomial(link = logit),
                    prior = normal(0,5),
@@ -261,7 +261,7 @@ mod4vs6
 ## Correlation plot of covariates
 dev.new()
 dat <- subset(rhau, select = c(sst.DI.spring, sst.PI.spring, mei.avg, cu.spring, 
-                              st.onset, pdo.index))
+                               st.onset, pdo.index))
 colnames(dat) <- c("SST spring (DI)", "SST spring (PI)", "MEI", "Coastal Upwelling (Spring)", 
                    "Spring Transition (Onset)", "PDO Index")
 
@@ -276,7 +276,7 @@ pp_check(mod2)
 dev.new()
 par(mar = c(5.1,4.3,4.1,1))
 
-x <- as.matrix(mod2, pars = "IslandPI")
+x <- as.matrix(mod2, pars = "islandPI")
 px <- sm.density(x, display = "none")
 px <- sm.density(x, eval.points = sort(c(px$eval.points, quantile(x, c(0.025,0.5,0.975)))), display = "none")
 ci <- which(names(px$eval.points)=="2.5%"):which(names(px$eval.points)=="97.5%")
@@ -297,56 +297,56 @@ segments(x0 = px$eval.points[names(px$eval.points)=="50%"], y0 = 0,
 dev.new(width = 10, height = 7)
 par(mar = c(5.1,4.3,4.1,1))
 
-YY <- sort(unique(rhau$Year))
-newdata <- data.frame(Year = rep(YY, each = 2), Site = "newsite",
-                      Island = rep(c("DI","PI"), length(YY)))
-pfit <- posterior_linpred(mod2, transform = TRUE, re.form = ~ (1 | Year), newdata = newdata)
-pobs <- aggregate(cbind(Egg, LastCheck) ~ Year + Island, data = rhau, sum)
-pobs_ci <- binconf(pobs$LastCheck, n = pobs$Egg)
+YY <- sort(unique(rhau$year))
+newdata <- data.frame(year = rep(YY, each = 2), site = "newsite",
+                      island = rep(c("DI","PI"), length(YY)))
+pfit <- posterior_linpred(mod2, transform = TRUE, re.form = ~ (1 | year), newdata = newdata)
+pobs <- aggregate(cbind(egg, last_check) ~ year + island, data = rhau, sum)
+pobs_ci <- binconf(pobs$last_check, n = pobs$egg)
 eval.points <- range(pobs_ci, apply(pfit,2,quantile,c(0.025,0.975)))
 eval.points <- seq(min(eval.points), max(eval.points), length = 300)
-xyDI <- pfit[,newdata$Island=="DI"]
+xyDI <- pfit[,newdata$island=="DI"]
 pxyDI <- t(apply(xyDI, 2, function(x) 
   sm.density(x, eval.points = eval.points, display = "none")$estimate))
-xyPI <- pfit[,newdata$Island=="PI"]
+xyPI <- pfit[,newdata$island=="PI"]
 pxPI <- sm.density(as.vector(xyPI), display = "none")
 pxyPI <- t(apply(xyPI, 2, function(x) 
   sm.density(x, eval.points = eval.points, display = "none")$estimate))
 
-plot(newdata$Year[newdata$Island=="PI"], apply(pfit[,newdata$Island=="PI"],2,median), 
+plot(newdata$year[newdata$island=="PI"], apply(pfit[,newdata$island=="PI"],2,median), 
      las = 1, cex.axis = 1.2, cex.lab = 1.5, type = "l", lwd = 3, col = "cornflowerblue",
      xlab = "Year", ylab = "Probability of fledging", 
      ylim = range(pobs_ci, apply(pfit,2,quantile,c(0.025,0.975))), 
      xaxs = "i", xaxt = "n", yaxs = "i")
-lines(newdata$Year[newdata$Island=="DI"], apply(pfit[,newdata$Island=="DI"],2,median),
+lines(newdata$year[newdata$island=="DI"], apply(pfit[,newdata$island=="DI"],2,median),
       lwd = 3, col = "darkgray")
-axis(1, at = min(rhau$Year):max(rhau$Year))
+axis(1, at = min(rhau$year):max(rhau$year))
 
-#densregion(newdata$Year[newdata$Island=="PI"], eval.points, pxyPI, 
+#densregion(newdata$year[newdata$island=="PI"], eval.points, pxyPI, 
 #          colmax = transparent("darkgray",0.1), colmin = "transparent")
-polygon(c(newdata$Year[newdata$Island=="PI"], rev(newdata$Year[newdata$Island=="PI"])),
-        c(apply(pfit[,newdata$Island=="PI"],2,quantile,0.025), 
-          rev(apply(pfit[,newdata$Island=="PI"],2,quantile,0.975))), 
+polygon(c(newdata$year[newdata$island=="PI"], rev(newdata$year[newdata$island=="PI"])),
+        c(apply(pfit[,newdata$island=="PI"],2,quantile,0.025), 
+          rev(apply(pfit[,newdata$island=="PI"],2,quantile,0.975))), 
         col = transparent("cornflowerblue",0.7), border = NA)
-#densregion(newdata$Year[newdata$Island=="DI"], eval.points, pxyDI, 
+#densregion(newdata$year[newdata$island=="DI"], eval.points, pxyDI, 
 #           colmax = transparent("black",0.3), colmin = "transparent")
-polygon(c(newdata$Year[newdata$Island=="DI"], rev(newdata$Year[newdata$Island=="DI"])),
-        c(apply(pfit[,newdata$Island=="DI"],2,quantile,0.025), 
-          rev(apply(pfit[,newdata$Island=="DI"],2,quantile,0.975))), 
+polygon(c(newdata$year[newdata$island=="DI"], rev(newdata$year[newdata$island=="DI"])),
+        c(apply(pfit[,newdata$island=="DI"],2,quantile,0.025), 
+          rev(apply(pfit[,newdata$island=="DI"],2,quantile,0.975))), 
         col = transparent("darkgray",0.7), border = NA)
 
-YYPI <- pobs$Year[pobs$Island=="PI"]
+YYPI <- pobs$year[pobs$island=="PI"]
 YYPI <- YYPI + c(0.05, rep(-0.05, length(YYPI) - 2), -0.1)
-points(YYPI, pobs.ci[pobs$Island=="PI","PointEst"], 
+points(YYPI, pobs.ci[pobs$island=="PI","PointEst"], 
        col = "cornflowerblue", pch = 15, cex = 1.5)
-segments(x0 = YYPI, y0 = pobs.ci[pobs$Island=="PI","Lower"],
-         y1 = pobs.ci[pobs$Island=="PI","Upper"], col = "cornflowerblue")
-YYDI <- pobs$Year[pobs$Island=="DI"]
+segments(x0 = YYPI, y0 = pobs.ci[pobs$island=="PI","Lower"],
+         y1 = pobs.ci[pobs$island=="PI","Upper"], col = "cornflowerblue")
+YYDI <- pobs$year[pobs$island=="DI"]
 YYDI <- YYDI + c(0.1, rep(0.05, length(YYDI) - 2), -0.05)
-points(YYDI, pobs.ci[pobs$Island=="DI","PointEst"], 
+points(YYDI, pobs.ci[pobs$island=="DI","PointEst"], 
        col = "darkgray", pch = 16, cex = 1.5)
-segments(x0 = YYDI, y0 = pobs_ci[pobs$Island=="DI","Lower"],
-         y1 = pobs_ci[pobs$Island=="DI","Upper"], col = "darkgray")
+segments(x0 = YYDI, y0 = pobs_ci[pobs$island=="DI","Lower"],
+         y1 = pobs_ci[pobs$island=="DI","Upper"], col = "darkgray")
 
 legend("topleft", c("Protection","Destruction"), lwd = 3, pch = c(15,16), 
        col = c("cornflowerblue","darkgray"))
