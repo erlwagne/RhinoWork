@@ -78,7 +78,7 @@ biol_trans <- mutate(biol_trans, st_onset = replace_na(st_onset, 365),
 
 # Area-Averaged of Sea Surface Temperature at 11 microns (Day) monthly 4 km [MODIS-Aqua ()
 # at Protection and Destruction Island
-# Monthly 2009-2018
+# Monthly 2002-2018
 sst_DI <- read.csv(here::here("data","SST_DI_2002_2019.csv"), skip = 8, 
                    na.strings = "-32767")[,1:2]
 colnames(sst_DI) <- c("date","sst")
