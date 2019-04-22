@@ -14,19 +14,8 @@ output:
     toc: yes
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(tidy = FALSE, highlight = TRUE, comment = NA, 
-                      dev = "png", dev.args = list(type = "cairo-png"))
 
-if(!require(captioner))
-  devtools::install_github("adletaw/captioner")
-library(captioner)
-fig_nums <- captioner("Figure S", suffix = ": ", auto_space = FALSE, 
-                      style = "b", style_prefix = TRUE)
-```
-```{r width, include=FALSE}
-options(width = 130)
-```
+
 
 # Overview
 
@@ -38,7 +27,8 @@ This is a Rhinoceros Auklet from the Protection Island colony:
 
 First we load the libraries we'll use.
 
-```{r getting_started, message = FALSE, warning = FALSE}
+
+```r
 if(!require(here)) install.packages("here::here")
 library(here)
 if(!require(rstanarm)) install.package("rstanarm")
@@ -67,7 +57,8 @@ library(dplyr)
 
 Next we'll read in the datasets from various sources and manipulate them into a usable format.
 
-```{r data, eval = FALSE}
+
+```r
 # Nest success data
 nest_data <- read.csv(here::here("data","RhAu2.csv"), fileEncoding="UTF-8-BOM")
 names(nest_data) <- gsub("lastcheck", "last_check", tolower(names(nest_data)))
