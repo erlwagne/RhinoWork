@@ -15,6 +15,7 @@ library(corrplot)
 library(lubridate)
 library(tidyr)
 library(dplyr)
+source(here::here("analysis","loo_compair.R"))
 
 #--------------------------
 # DATA  
@@ -190,7 +191,7 @@ occ0 <- stan_glmer(cbind(egg, viable - egg) ~ (1 | site) + (1 | year),
                    prior_covariance = decov(),
                    chains = 3, iter = 2000, warmup = 1000, cores = 3)
 
-summary(occ0, prob = c(0.025,0.5,0.975))
+summary(occ0, prob = c(0.025,0.5,0.975), digits = 2)
 launch_shinystan(occ0)
 
 # Inter-island differences, constant across years
@@ -202,7 +203,7 @@ occ1 <- stan_glmer(cbind(egg, viable - egg) ~ island + (1 | site) + (1 | year),
                    prior_covariance = decov(),
                    chains = 3, iter = 2000, warmup = 1000, cores = 3)
 
-summary(occ1, prob = c(0.025,0.5,0.975))
+summary(occ1, prob = c(0.025,0.5,0.975), digits = 2)
 launch_shinystan(occ1)
 
 # Inter-island differences, varying among years
@@ -214,11 +215,11 @@ occ2 <- stan_glmer(cbind(egg, viable - egg) ~ island + (1 | site) + (island | ye
                    prior_covariance = decov(),
                    chains = 3, iter = 2000, warmup = 1000, cores = 3)
 
-summary(occ2, prob = c(0.025,0.5,0.975))
+summary(occ2, prob = c(0.025,0.5,0.975), digits = 2)
 launch_shinystan(occ2)
 
-# Inter-island differences, varying among years, plus PC1
-occ3 <- stan_glmer(cbind(egg, viable - egg) ~ island + PC1 + (1 | site) + (island | year),
+# Inter-island differences, varying among years, plus PC1 + PC2
+occ3 <- stan_glmer(cbind(egg, viable - egg) ~ island + PC1 + PC2 + (1 | site) + (island | year),
                    data =  rhau,
                    family = binomial(link = logit),
                    prior = normal(0,5),
@@ -226,11 +227,11 @@ occ3 <- stan_glmer(cbind(egg, viable - egg) ~ island + PC1 + (1 | site) + (islan
                    prior_covariance = decov(),
                    chains = 3, iter = 2000, warmup = 1000, cores = 3)
 
-summary(occ3, prob = c(0.025,0.5,0.975))
+summary(occ3, prob = c(0.025,0.5,0.975), digits = 2)
 launch_shinystan(occ3)
 
-# Inter-island differences, varying among years, plus PC2
-occ4 <- stan_glmer(cbind(egg, viable - egg) ~ island + PC2 + (1 | site) + (island | year),
+# Inter-island differences plus PC1 + PC2, no random time-variation
+occ4 <- stan_glmer(cbind(egg, viable - egg) ~ island + PC1 + PC2 + (1 | site),
                    data =  rhau,
                    family = binomial(link = logit),
                    prior = normal(0,5),
@@ -238,74 +239,32 @@ occ4 <- stan_glmer(cbind(egg, viable - egg) ~ island + PC2 + (1 | site) + (islan
                    prior_covariance = decov(),
                    chains = 3, iter = 2000, warmup = 1000, cores = 3)
 
-summary(occ4, prob = c(0.025,0.5,0.975))
+summary(occ4, prob = c(0.025,0.5,0.975), digits = 2)
 launch_shinystan(occ4)
 
-occ5 <- stan_glmer(cbind(egg, viable - egg) ~ island + PC1 + (1 | site),
-                   data =  rhau,
-                   family = binomial(link = logit),
-                   prior = normal(0,5),
-                   prior_intercept = normal(0,5),
-                   prior_covariance = decov(),
-                   chains = 3, iter = 2000, warmup = 1000, cores = 3)
-
-summary(occ5, prob = c(0.025,0.5,0.975))
-launch_shinystan(occ5)
-
-occ6 <- stan_glmer(cbind(egg, viable - egg) ~ island + PC2 + (1 | site),
-                   data =  rhau,
-                   family = binomial(link = logit),
-                   prior = normal(0,5),
-                   prior_intercept = normal(0,5),
-                   prior_covariance = decov(),
-                   chains = 3, iter = 2000, warmup = 1000, cores = 3)
-
-summary(occ6, prob = c(0.025,0.5,0.975))
-launch_shinystan(occ6)
-
 ## Model selection by approximate leave-one-out cross-validation
+occ_loos <-  lapply(list(occ0 = occ0, occ1 = occ1, occ2 = occ2, occ3 = occ3, occ4 = occ4), loo)
+occ_loos
 
-o_loos <-  list(occ0 = loo(occ0), occ1 = loo(occ1), occ2 = loo(occ2), occ3 = loo(occ3), occ4 = loo(occ4),
-              occ5 = loo(occ5), occ6 = loo(occ6))
-occ_sel <- loo::compare(o_loos$occ0, o_loos$occ1, o_loos$occ2)
-occ_sel_full <- loo::compare(o_loos$occ0, o_loos$occ1, o_loos$occ2, o_loos$occ3, o_loos$occ4, o_loos$occ5, 
-                             o_loos$occ6)
-occ2vs1 <- loo::compare(o_loos$occ2, o_loos$occ1)
-occ1vs0 <- loo::compare(o_loos$occ1, o_loos$occ0)
-occ2vs0 <- loo::compare(o_loos$occ2, o_loos$occ0)
-occ2vs3 <- loo::compare(o_loos$occ2, o_loos$occ3)
-occ2vs4 <- loo::compare(o_loos$occ2, o_loos$occ4)
-occ3vs4 <- loo::compare(o_loos$occ3, o_loos$occ4)
-occ3vs5 <- loo::compare(o_loos$occ3, o_loos$occ5)
-occ4vs6 <- loo::compare(o_loos$occ4, o_loos$occ6)
+# unpaired comparisons
+occ_compare <- loo_compare(occ_loos)
+print(occ_compare, simplify = FALSE)
 
-occ_sel
-occ_sel_full
-occ2vs1
-occ1vs0
-occ2vs0
-occ2vs3
-occ2vs4
-occ3vs4
-occ3vs5
-occ4vs6
+# pairwise comparisons
+occ_compair <- loo_compair(occ_loos)
+occ_compair
+
+## Cache stanfits and loo objects
+save(list = grep("occ", ls(), value = TRUE), file = here::here("analysis","cache","occ_stanfit_loo.RData"))
+
 
 #-------------------------
 # BURROW OCCUPANCY FIGURES
 #-------------------------
 
-## Correlation plot of covariates
-dev.new()
-dat <- subset(rhau, select = c(sst.DI.spring, sst.PI.spring, mei.avg, cu.spring, 
-                              st.onset, pdo.index))
-colnames(dat) <- c("SST spring (DI)", "SST spring (PI)", "MEI", "Coastal Upwelling (Spring)", 
-                   "Spring Transition (Onset)", "PDO Index")
-
-corrplot(cor(dat), method = "ellipse")
-
 ## Model validation by graphical posterior predictive checking
 # default plot: marginal distribution of data and posterior predictive distribution
-pp_check(mod2)
+pp_check(occ3)
 
 ## Posterior distribution of average between-island difference in full model,
 ## with median and 95% credible interval
@@ -319,7 +278,8 @@ ci <- which(names(px$eval.points)=="2.5%"):which(names(px$eval.points)=="97.5%")
 plot(px$eval.points, px$estimate, col = "darkgray", type = "l", lwd = 3,
      las = 1, cex.lab = 1.5, cex.axis = 1.2, bty = "n", 
      ylim = c(0,max(px$estimate)), yaxs = "i",
-     xlab = "Burrow Occupancy log-odds ratio: Protection vs. Destruction", ylab = "Probability density",
+     xlab = "Occupancy log-odds ratio: Protection vs. Destruction", 
+     ylab = "Probability density",
      main = "Posterior median and 95% credible interval")
 polygon(c(px$eval.points[ci], rev(px$eval.points[ci])), c(px$estimate[ci], rep(0,length(ci))),
         col = transparent("darkgray",0.7), border = NA)
@@ -394,18 +354,18 @@ legend("topleft", c("Protection","Destruction"), lwd = 3, pch = c(15,16),
 ## Random effects of site and year
 
 # Intercept-only model 
-mod0 <- stan_glmer(cbind(last_check, egg - last_check) ~ (1 | site) + (1 | year),
+suc0 <- stan_glmer(cbind(last_check, egg - last_check) ~ (1 | site) + (1 | year),
                    data =  rhau,
                    family = binomial(link = logit),
                    prior_intercept = normal(0,5),
                    prior_covariance = decov(),
                    chains = 3, iter = 2000, warmup = 1000, cores = 3)
 
-summary(mod0, prob = c(0.025,0.5,0.975))
-launch_shinystan(mod0)
+summary(suc0, prob = c(0.025,0.5,0.975), digits = 2)
+launch_shinystan(suc0)
 
 # Inter-island differences, constant across years
-mod1 <- stan_glmer(cbind(last_check, egg - last_check) ~ Island + (1 | site) + (1 | year),
+suc1 <- stan_glmer(cbind(last_check, egg - last_check) ~ island + (1 | site) + (1 | year),
                    data =  rhau,
                    family = binomial(link = logit),
                    prior = normal(0,5),
@@ -413,11 +373,11 @@ mod1 <- stan_glmer(cbind(last_check, egg - last_check) ~ Island + (1 | site) + (
                    prior_covariance = decov(),
                    chains = 3, iter = 2000, warmup = 1000, cores = 3)
 
-summary(mod1, prob = c(0.025,0.5,0.975))
-launch_shinystan(mod1)
+summary(suc1, prob = c(0.025,0.5,0.975), digits = 2)
+launch_shinystan(suc1)
 
 # Inter-island differences, varying among years
-mod2 <- stan_glmer(cbind(llast_check, egg - last_check) ~ island + (1 | site) + (island | year),
+suc2 <- stan_glmer(cbind(last_check, egg - last_check) ~ island + (1 | site) + (island | year),
                    data =  rhau,
                    family = binomial(link = logit),
                    prior = normal(0,5),
@@ -425,11 +385,11 @@ mod2 <- stan_glmer(cbind(llast_check, egg - last_check) ~ island + (1 | site) + 
                    prior_covariance = decov(),
                    chains = 3, iter = 2000, warmup = 1000, cores = 3)
 
-summary(mod2, prob = c(0.025,0.5,0.975))
-launch_shinystan(mod2)
+summary(suc2, prob = c(0.025,0.5,0.975), digits = 2)
+launch_shinystan(suc2)
 
-# Inter-island differences, varying among years, plus PC1
-mod3 <- stan_glmer(cbind(last_check, egg - last_check) ~ island + PC1 + (1 | site) + (island | year),
+# Inter-island differences, varying among years, plus PC1 + PC2
+suc3 <- stan_glmer(cbind(last_check, egg - last_check) ~ island + PC1 + PC2 + (1 | site) + (island | year),
                    data =  rhau,
                    family = binomial(link = logit),
                    prior = normal(0,5),
@@ -437,11 +397,11 @@ mod3 <- stan_glmer(cbind(last_check, egg - last_check) ~ island + PC1 + (1 | sit
                    prior_covariance = decov(),
                    chains = 3, iter = 2000, warmup = 1000, cores = 3)
 
-summary(mod3, prob = c(0.025,0.5,0.975))
-launch_shinystan(mod3)
+summary(suc3, prob = c(0.025,0.5,0.975), digits = 2)
+launch_shinystan(suc3)
 
-# Inter-island differences, varying among years, plus PC2
-mod4 <- stan_glmer(cbind(last_check, egg - last_check) ~ island + PC2 + (1 | site) + (island | year),
+# Inter-island differences plus PC1 + PC2, no random time-variation
+suc4 <- stan_glmer(cbind(last_check, egg - last_check) ~ island + PC1 + PC2 + (1 | site),
                    data =  rhau,
                    family = binomial(link = logit),
                    prior = normal(0,5),
@@ -449,57 +409,25 @@ mod4 <- stan_glmer(cbind(last_check, egg - last_check) ~ island + PC2 + (1 | sit
                    prior_covariance = decov(),
                    chains = 3, iter = 2000, warmup = 1000, cores = 3)
 
-summary(mod4, prob = c(0.025,0.5,0.975))
-launch_shinystan(mod4)
-
-# Inter-island differences, plus PC1 alone
-mod5 <- stan_glmer(cbind(last_check, egg - last_check) ~ island + PC1 + (1 | site),
-                   data =  rhau,
-                   family = binomial(link = logit),
-                   prior = normal(0,5),
-                   prior_intercept = normal(0,5),
-                   prior_covariance = decov(),
-                   chains = 3, iter = 2000, warmup = 1000, cores = 3)
-
-summary(mod5, prob = c(0.025,0.5,0.975))
-launch_shinystan(mod5)
-
-# Inter-island differences, plus PC2 alone
-mod6 <- stan_glmer(cbind(last_check, egg - last_check) ~ island + PC2 + (1 | site),
-                   data =  rhau,
-                   family = binomial(link = logit),
-                   prior = normal(0,5),
-                   prior_intercept = normal(0,5),
-                   prior_covariance = decov(),
-                   chains = 3, iter = 2000, warmup = 1000, cores = 3)
-
-summary(mod6, prob = c(0.025,0.5,0.975))
-launch_shinystan(mod6)
+summary(suc4, prob = c(0.025,0.5,0.975), digits = 2)
+launch_shinystan(suc4)
 
 ## Model selection by approximate leave-one-out cross-validation
+## Model selection by approximate leave-one-out cross-validation
+suc_loos <-  lapply(list(suc0 = suc0, suc1 = suc1, suc2 = suc2, suc3 = suc3, suc4 = suc4), 
+                    loo, k_threshold = 0.7)
+suc_loos
 
-loos <-  list(mod0 = loo(mod0), mod1 = loo(mod1), mod2 = loo(mod2), mod3 = loo(mod3), mod4 = loo(mod4),
-              mod5 = loo(mod5), mod6 = loo(mod6))
-mod_sel <- loo::compare(loos$mod0, loos$mod1, loos$mod2)
-mod_sel_full <- loo::compare(loos$mod0, loos$mod1, loos$mod2, loos$mod3, loos$mod4, loos$mod5, loos$mod6)
-mod2vs1 <- loo::compare(loos$mod2, loos$mod1)
-mod1vs0 <- loo::compare(loos$mod1, loos$mod0)
-mod2vs0 <- loo::compare(loos$mod2, loos$mod0)
-mod2vs3 <- loo::compare(loos$mod2, loos$mod3)
-mod2vs4 <- loo::compare(loos$mod2, loos$mod4)
-mod3vs4 <- loo::compare(loos$mod3, loos$mod4)
-mod3vs5 <- loo::compare(loos$mod3, loos$mod5)
-mod4vs6 <- loo::compare(loos$mod4, loos$mod6)
+# unpaired comparisons
+suc_compare <- loo_compare(suc_loos)
+print(suc_compare, simplify = FALSE)
 
-mod_sel
-mod2vs1
-mod1vs0
-mod2vs0
-mod2vs3
-mod2vs4
-mod3vs4
-mod3vs5
-mod4vs6
+# pairwise comparisons
+suc_compair <- loo_compair(suc_loos)
+suc_compair
+
+## Cache stanfits and loo objects
+save(list = grep("suc", ls(), value = TRUE), file = here::here("analysis","cache","suc_stanfit_loo.RData"))
 
 #-----------------------------
 # REPRODUCTIVE SUCCESS FIGURES
@@ -507,14 +435,14 @@ mod4vs6
 
 ## Model validation by graphical posterior predictive checking
 # default plot: marginal distribution of data and posterior predictive distribution
-pp_check(mod2)
+pp_check(suc2)
 
 ## Posterior distribution of average between-island difference in full model,
 ## with median and 95% credible interval
 dev.new()
 par(mar = c(5.1,4.3,4.1,1))
 
-x <- as.matrix(mod2, pars = "islandPI")
+x <- as.matrix(suc2, pars = "islandPI")
 px <- sm.density(x, display = "none")
 px <- sm.density(x, eval.points = sort(c(px$eval.points, quantile(x, c(0.025,0.5,0.975)))), display = "none")
 ci <- which(names(px$eval.points)=="2.5%"):which(names(px$eval.points)=="97.5%")
@@ -538,7 +466,7 @@ par(mar = c(5.1,4.3,4.1,1))
 YY <- sort(unique(rhau$year))
 newdata <- data.frame(year = rep(YY, each = 2), site = "newsite",
                       island = rep(c("DI","PI"), length(YY)))
-pfit <- posterior_linpred(mod2, transform = TRUE, re.form = ~ (1 | year), newdata = newdata)
+pfit <- posterior_linpred(suc2, transform = TRUE, re.form = ~ (1 | year), newdata = newdata)
 pobs <- aggregate(cbind(egg, last_check) ~ year + island, data = rhau, sum)
 pobs_ci <- binconf(pobs$last_check, n = pobs$egg)
 eval.points <- range(pobs_ci, apply(pfit,2,quantile,c(0.025,0.975)))
