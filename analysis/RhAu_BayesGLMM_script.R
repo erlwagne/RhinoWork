@@ -183,7 +183,7 @@ rhau <- left_join(nest_data, select(env_data, c(year, PC1, PC2)))
 ## Random effects of site and year
 
 # Intercept-only model 
-occ0 <- stan_glmer(cbind(egg,viable-egg) ~ (1 | site) + (1 | year),
+occ0 <- stan_glmer(cbind(egg, viable - egg) ~ (1 | site) + (1 | year),
                    data =  rhau,
                    family = binomial(link = logit),
                    prior_intercept = normal(0,5),
@@ -194,7 +194,7 @@ summary(occ0, prob = c(0.025,0.5,0.975))
 launch_shinystan(occ0)
 
 # Inter-island differences, constant across years
-occ1 <- stan_glmer(cbind(egg,viable-egg) ~ island + (1 | site) + (1 | year),
+occ1 <- stan_glmer(cbind(egg, viable - egg) ~ island + (1 | site) + (1 | year),
                    data =  rhau,
                    family = binomial(link = logit),
                    prior = normal(0,5),
@@ -206,7 +206,7 @@ summary(occ1, prob = c(0.025,0.5,0.975))
 launch_shinystan(occ1)
 
 # Inter-island differences, varying among years
-occ2 <- stan_glmer(cbind(egg,viable-egg) ~ island + (1 | site) + (island | year),
+occ2 <- stan_glmer(cbind(egg, viable - egg) ~ island + (1 | site) + (island | year),
                    data =  rhau,
                    family = binomial(link = logit),
                    prior = normal(0,5),
@@ -218,7 +218,7 @@ summary(occ2, prob = c(0.025,0.5,0.975))
 launch_shinystan(occ2)
 
 # Inter-island differences, varying among years, plus PC1
-occ3 <- stan_glmer(cbind(egg,viable-egg) ~ island + PC1 + (1 | site) + (island | year),
+occ3 <- stan_glmer(cbind(egg, viable - egg) ~ island + PC1 + (1 | site) + (island | year),
                    data =  rhau,
                    family = binomial(link = logit),
                    prior = normal(0,5),
@@ -230,7 +230,7 @@ summary(occ3, prob = c(0.025,0.5,0.975))
 launch_shinystan(occ3)
 
 # Inter-island differences, varying among years, plus PC2
-occ4 <- stan_glmer(cbind(egg,viable-egg) ~ island + PC2 + (1 | site) + (island | year),
+occ4 <- stan_glmer(cbind(egg, viable - egg) ~ island + PC2 + (1 | site) + (island | year),
                    data =  rhau,
                    family = binomial(link = logit),
                    prior = normal(0,5),
@@ -241,7 +241,7 @@ occ4 <- stan_glmer(cbind(egg,viable-egg) ~ island + PC2 + (1 | site) + (island |
 summary(occ4, prob = c(0.025,0.5,0.975))
 launch_shinystan(occ4)
 
-occ5 <- stan_glmer(cbind(egg,viable-egg) ~ island + PC1 + (1 | site),
+occ5 <- stan_glmer(cbind(egg, viable - egg) ~ island + PC1 + (1 | site),
                    data =  rhau,
                    family = binomial(link = logit),
                    prior = normal(0,5),
@@ -252,7 +252,7 @@ occ5 <- stan_glmer(cbind(egg,viable-egg) ~ island + PC1 + (1 | site),
 summary(occ5, prob = c(0.025,0.5,0.975))
 launch_shinystan(occ5)
 
-occ6 <- stan_glmer(cbind(egg,viable-egg) ~ island + PC2 + (1 | site),
+occ6 <- stan_glmer(cbind(egg, viable - egg) ~ island + PC2 + (1 | site),
                    data =  rhau,
                    family = binomial(link = logit),
                    prior = normal(0,5),
