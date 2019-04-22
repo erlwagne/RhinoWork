@@ -387,13 +387,13 @@ legend("topleft", c("Protection","Destruction"), lwd = 3, pch = c(15,16),
        col = c("cornflowerblue","darkgray"))
 
 #----------------------------
-## Reproductive Success ##
+## REPRODUCTIVE SUCCESS ##
 #----------------------------
 
 ## Random effects of site and year
 
 # Intercept-only model 
-mod0 <- stan_glmer(cbind(lastcheck,egg-lastcheck) ~ (1 | site) + (1 | year),
+mod0 <- stan_glmer(cbind(last_check,egg-lastcheck) ~ (1 | site) + (1 | year),
                    data =  rhau,
                    family = binomial(link = logit),
                    prior_intercept = normal(0,5),
@@ -404,7 +404,7 @@ summary(mod0, prob = c(0.025,0.5,0.975))
 launch_shinystan(mod0)
 
 # Inter-island differences, constant across years
-mod1 <- stan_glmer(cbind(lastcheck,egg-lastcheck) ~ Island + (1 | site) + (1 | year),
+mod1 <- stan_glmer(cbind(last_check,egg-last_check) ~ Island + (1 | site) + (1 | year),
                    data =  rhau,
                    family = binomial(link = logit),
                    prior = normal(0,5),
@@ -416,7 +416,7 @@ summary(mod1, prob = c(0.025,0.5,0.975))
 launch_shinystan(mod1)
 
 # Inter-island differences, varying among years
-mod2 <- stan_glmer(cbind(lastcheck,egg-lastcheck) ~ island + (1 | site) + (island | year),
+mod2 <- stan_glmer(cbind(last_check,egg-last_check) ~ island + (1 | site) + (island | year),
                    data =  rhau,
                    family = binomial(link = logit),
                    prior = normal(0,5),
@@ -428,7 +428,7 @@ summary(mod2, prob = c(0.025,0.5,0.975))
 launch_shinystan(mod2)
 
 # Inter-island differences, varying among years, plus PC1
-mod3 <- stan_glmer(cbind(lastcheck,egg-lastcheck) ~ Island + PC1 + (1 | Site) + (Island | Year),
+mod3 <- stan_glmer(cbind(last_check,egg-last_check) ~ island + PC1 + (1 | site) + (island | year),
                    data =  rhau,
                    family = binomial(link = logit),
                    prior = normal(0,5),
@@ -440,7 +440,7 @@ summary(mod3, prob = c(0.025,0.5,0.975))
 launch_shinystan(mod3)
 
 # Inter-island differences, varying among years, plus PC2
-mod4 <- stan_glmer(cbind(lastcheck,egg-lastcheck) ~ Island + PC2 + (1 | Site) + (Island | Year),
+mod4 <- stan_glmer(cbind(last_check,egg-last_check) ~ island + PC2 + (1 | site) + (island | year),
                    data =  rhau,
                    family = binomial(link = logit),
                    prior = normal(0,5),
@@ -451,7 +451,8 @@ mod4 <- stan_glmer(cbind(lastcheck,egg-lastcheck) ~ Island + PC2 + (1 | Site) + 
 summary(mod4, prob = c(0.025,0.5,0.975))
 launch_shinystan(mod4)
 
-mod5 <- stan_glmer(cbind(lastcheck,egg-lastcheck) ~ Island + PC1 + (1 | Site),
+# Inter-island differences, plus PC1 alone
+mod5 <- stan_glmer(cbind(last_check,egg-last_check) ~ island + PC1 + (1 | site),
                    data =  rhau,
                    family = binomial(link = logit),
                    prior = normal(0,5),
@@ -462,7 +463,8 @@ mod5 <- stan_glmer(cbind(lastcheck,egg-lastcheck) ~ Island + PC1 + (1 | Site),
 summary(mod5, prob = c(0.025,0.5,0.975))
 launch_shinystan(mod5)
 
-mod6 <- stan_glmer(cbind(lastcheck,egg-lastcheck) ~ Island + PC2 + (1 | Site),
+# Inter-island differences, plus PC2 alone
+mod6 <- stan_glmer(cbind(last_check,egg-last_check) ~ island + PC2 + (1 | site),
                    data =  rhau,
                    family = binomial(link = logit),
                    prior = normal(0,5),
@@ -511,7 +513,7 @@ pp_check(mod2)
 dev.new()
 par(mar = c(5.1,4.3,4.1,1))
 
-x <- as.matrix(mod2, pars = "IslandPI")
+x <- as.matrix(mod2, pars = "islandPI")
 px <- sm.density(x, display = "none")
 px <- sm.density(x, eval.points = sort(c(px$eval.points, quantile(x, c(0.025,0.5,0.975)))), display = "none")
 ci <- which(names(px$eval.points)=="2.5%"):which(names(px$eval.points)=="97.5%")
