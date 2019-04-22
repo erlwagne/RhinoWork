@@ -31,7 +31,7 @@ options(width = 130)
 
 This is a Rhinoceros Auklet from the Protection Island colony:
 
-![auklet](https://www.eopugetsound.org/sites/default/files/styles/magazinewidth_592px/public/topical_articles/images/16343412270_5cfaa5c480_o.jpg?itok=WjzI1_2K)
+![](https://www.eopugetsound.org/sites/default/files/styles/magazinewidth_592px/public/topical_articles/images/16343412270_5cfaa5c480_o.jpg?itok=WjzI1_2K)
 
 # Setup and data
 
@@ -105,7 +105,8 @@ sst_DI <- spread(sst_DI, month, sst)
 sst_DI <- mutate(sst_DI, sst_DI_spring = rowMeans(select(sst_DI, Apr:Jun)),
                  sst_DI_summer = rowMeans(select(sst_DI, Jul:Aug)))
 
-sst_PI <- read.csv(here::here("data","SST_PI_2002_2019.csv"), skip = 8, na.strings = "-32767")[,1:2]
+sst_PI <- read.csv(here::here("data","SST_PI_2002_2019.csv"), skip = 8, 
+                   na.strings = "-32767")[,1:2]
 colnames(sst_PI) <- c("date","sst")
 sst_PI$date <- ymd_hms(sst_PI$date)
 sst_PI <- mutate(sst_PI, year = year(date), month = month(date, label = TRUE), date = NULL)
