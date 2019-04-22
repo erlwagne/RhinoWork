@@ -2827,7 +2827,7 @@ div.tocify {
 </div>
 <div id="setup-and-data" class="section level1">
 <h1>Setup and data</h1>
-<p>First we load the libraries we’ll use.</p>
+<p>First we load the libraries and functions we’ll use.</p>
 <pre class="r"><code>if(!require(here)) install.packages(&quot;here::here&quot;)
 library(here)
 if(!require(rstanarm)) install.package(&quot;rstanarm&quot;)
@@ -2851,7 +2851,8 @@ library(lubridate)
 if(!require(tidyr)) install.package(&quot;tidyr&quot;)
 library(tidyr)
 if(!require(dplyr)) install.package(&quot;dplyr&quot;)
-library(dplyr)</code></pre>
+library(dplyr)
+source(here::here(&quot;analysis&quot;,&quot;loo_compair.R&quot;))</code></pre>
 <p>Next we’ll read in the datasets from various sources and manipulate them into a usable format.</p>
 <pre class="r"><code># Nest success data
 nest_data &lt;- read.csv(here::here(&quot;data&quot;,&quot;RhAu2.csv&quot;), fileEncoding=&quot;UTF-8-BOM&quot;)
@@ -2879,49 +2880,25 @@ mei &lt;- select(mei, c(year,sepoct,octnov,novdec,decjan,
                      janfeb,febmar,marapr,aprmay,mayjun,junjul,julaug,augsep))
 mei &lt;- data.frame(mei, mei_avg = rowMeans(select(mei, sepoct:augsep)))
 
-# Area-Averaged of Sea Surface Temperature at 11 microns (Day) monthly 4 km [MODIS-Aqua ()
-# at Protection and Destruction Island
-# Monthly 2009-2018
-sst_DI &lt;- read.csv(here::here(&quot;data&quot;,&quot;SST_DI_2002_2019.csv&quot;), skip = 8, 
-                   na.strings = &quot;-32767&quot;)[,1:2]
-colnames(sst_DI) &lt;- c(&quot;date&quot;,&quot;sst&quot;)
-sst_DI$date &lt;- mdy_hm(sst_DI$date)
-sst_DI &lt;- mutate(sst_DI, year = year(date), month = month(date, label = TRUE), date = NULL)
-sst_DI &lt;- spread(sst_DI, month, sst)
-sst_DI &lt;- mutate(sst_DI, sst_DI_spring = rowMeans(select(sst_DI, Apr:Jun)),
-                 sst_DI_summer = rowMeans(select(sst_DI, Jul:Aug)))
-
-sst_PI &lt;- read.csv(here::here(&quot;data&quot;,&quot;SST_PI_2002_2019.csv&quot;), skip = 8, 
-                   na.strings = &quot;-32767&quot;)[,1:2]
-colnames(sst_PI) &lt;- c(&quot;date&quot;,&quot;sst&quot;)
-sst_PI$date &lt;- ymd_hms(sst_PI$date)
-sst_PI &lt;- mutate(sst_PI, year = year(date), month = month(date, label = TRUE), date = NULL)
-sst_PI &lt;- spread(sst_PI, month, sst)
-sst_PI &lt;- mutate(sst_PI, sst_PI_spring = rowMeans(select(sst_PI, Apr:Jun)), 
-                 sst_PI_summer = rowMeans(select(sst_PI, Jul:Aug)))
-
 # Average monthly SST from DFO stations
 # Wide format: year x month
 sst_amph &lt;- read.csv(here::here(&quot;data&quot;,grep(&quot;Amphitrite&quot;, list.files(here::here(&quot;data&quot;)), 
                                             value = TRUE)),
                      skip = 1, na.strings = &quot;99.99&quot;)
 colnames(sst_amph) &lt;- tolower(colnames(sst_amph))
-sst_amph &lt;- mutate(sst_amph, sst_amph_spring = rowMeans(select(sst_amph, apr:jun)),
-                   sst_amph_summer = rowMeans(select(sst_amph, jul:aug)))
+sst_amph &lt;- mutate(sst_amph, sst_amph_spring = rowMeans(select(sst_amph, apr:jun)))
 
 sst_race &lt;- read.csv(here::here(&quot;data&quot;,grep(&quot;Race_Rocks&quot;, list.files(here::here(&quot;data&quot;)), 
                                             value = TRUE)),
                      skip = 1, na.strings = &quot;99.99&quot;)
 colnames(sst_race) &lt;- tolower(colnames(sst_race))
-sst_race &lt;- mutate(sst_race, sst_race_spring = rowMeans(select(sst_race, apr:jun)),
-                   sst_race_summer = rowMeans(select(sst_race, jul:aug)))
+sst_race &lt;- mutate(sst_race, sst_race_spring = rowMeans(select(sst_race, apr:jun)))
 
 # Coastal Upwelling Index 48N 125W 1946-2018
 # Wide format: rows are years, columns are months
 cui &lt;- read.csv(here::here(&quot;data&quot;,&quot;CoastalUpwellingIndex.csv&quot;))[,-1]
 colnames(cui)[1] &lt;- &quot;year&quot;
-cui &lt;- mutate(cui, cui_spring = rowMeans(select(cui, Apr:Jun)), 
-              cui_summer = rowMeans(select(cui, Jul:Aug)))
+cui &lt;- mutate(cui, cui_spring = rowMeans(select(cui, Apr:Jun)))
 
 # Biological spring transition from NWFSC Ocean Ecosystem Indicators
 # Long format, 1970-2018
@@ -2932,14 +2909,52 @@ biol_trans &lt;- mutate(biol_trans, st_onset = yday(ydm(paste(year, st_onset, se
 biol_trans &lt;- mutate(biol_trans, st_onset = replace_na(st_onset, 365), 
                      st_end = replace_na(st_end, 365))
 
+# Area-Averaged of Sea Surface Temperature at 11 microns (Day) monthly 4 km [MODIS-Aqua ()
+# at Protection and Destruction Island
+# Monthly 2009-2018
+sst_DI &lt;- read.csv(here::here(&quot;data&quot;,&quot;SST_DI_2002_2019.csv&quot;), skip = 8, 
+                   na.strings = &quot;-32767&quot;)[,1:2]
+colnames(sst_DI) &lt;- c(&quot;date&quot;,&quot;sst&quot;)
+sst_DI$date &lt;- mdy_hm(sst_DI$date)
+sst_DI &lt;- mutate(sst_DI, year = year(date), month = month(date, label = TRUE), date = NULL)
+sst_DI &lt;- spread(sst_DI, month, sst)
+sst_DI &lt;- mutate(sst_DI, sst_DI_spring = rowMeans(select(sst_DI, Apr:Jun)))
+
+sst_PI &lt;- read.csv(here::here(&quot;data&quot;,&quot;SST_PI_2002_2019.csv&quot;), skip = 8, 
+                   na.strings = &quot;-32767&quot;)[,1:2]
+colnames(sst_PI) &lt;- c(&quot;date&quot;,&quot;sst&quot;)
+sst_PI$date &lt;- ymd_hms(sst_PI$date)
+sst_PI &lt;- mutate(sst_PI, year = year(date), month = month(date, label = TRUE), date = NULL)
+sst_PI &lt;- spread(sst_PI, month, sst)
+sst_PI &lt;- mutate(sst_PI, sst_PI_spring = rowMeans(select(sst_PI, Apr:Jun)))
+
+#  Area-Averaged of Chlorophyll a concentration monthly 4 km [MODIS-Aqua MODISA_L3m_CHL v2018]
+# at Protection and Destruction Island
+# Monthly 2002-2019
+chla_DI &lt;- read.csv(here::here(&quot;data&quot;,&quot;Chla_DI_2002_2019.csv&quot;), skip = 8, na.strings = &quot;-32767&quot;)[,1:2]
+colnames(chla_DI) &lt;- c(&quot;date&quot;,&quot;chla&quot;)
+chla_DI$date &lt;- mdy_hm(chla_DI$date)
+chla_DI &lt;- mutate(chla_DI, year = year(date), month = month(date, label = TRUE), date = NULL)
+chla_DI &lt;- spread(chla_DI, month, chla)
+chla_DI &lt;- mutate(chla_DI, chla_DI_spring = rowMeans(select(chla_DI, Apr:Jun)))
+
+chla_PI &lt;- read.csv(here::here(&quot;data&quot;,&quot;Chla_PI_2002_2019.csv&quot;), skip = 8, na.strings = &quot;-32767&quot;)[,1:2]
+colnames(chla_PI) &lt;- c(&quot;date&quot;,&quot;chla&quot;)
+chla_PI$date &lt;- mdy_hm(chla_PI$date)
+chla_PI &lt;- mutate(chla_PI, year = year(date), month = month(date, label = TRUE), date = NULL)
+chla_PI &lt;- spread(chla_PI, month, chla)
+chla_PI &lt;- mutate(chla_PI, chla_PI_spring = rowMeans(select(chla_PI, Apr:Jun)))
+
 # Merge covariate data
 env_data &lt;- Reduce(inner_join, list(select(pdo, c(year, pdo_index)), 
                                     select(mei, c(year, mei_avg)), 
-                                    select(sst_DI, c(year, sst_DI_spring, sst_DI_summer)), 
-                                    select(sst_PI, c(year, sst_PI_spring, sst_PI_summer)),
-                                    select(sst_amph, c(year, sst_amph_spring, sst_amph_summer)),
-                                    select(sst_race, c(year, sst_race_spring, sst_race_summer)),
-                                    select(cui, c(year, cui_spring, cui_summer)),
+                                    select(sst_DI, c(year, sst_DI_spring)), 
+                                    select(sst_PI, c(year, sst_PI_spring)),
+                                    select(sst_amph, c(year, sst_amph_spring)),
+                                    select(sst_race, c(year, sst_race_spring)),
+                                    select(cui, c(year, cui_spring)),
+                                    select(chla_DI, c(year, chla_DI_spring)),
+                                    select(chla_PI, c(year, chla_PI_spring)),
                                     select(biol_trans, c(year, st_onset, st_duration))))</code></pre>
 </div>
 
