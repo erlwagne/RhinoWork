@@ -394,7 +394,7 @@ legend("topleft", c("Protection","Destruction"), lwd = 3, pch = c(15,16),
 ## Random effects of site and year
 
 # Intercept-only model 
-mod0 <- stan_glmer(cbind(last_check,egg-lastcheck) ~ (1 | site) + (1 | year),
+mod0 <- stan_glmer(cbind(last_check,egg-last_check) ~ (1 | site) + (1 | year),
                    data =  rhau,
                    family = binomial(link = logit),
                    prior_intercept = normal(0,5),
@@ -405,7 +405,7 @@ summary(mod0, prob = c(0.025,0.5,0.975))
 launch_shinystan(mod0)
 
 # Inter-island differences, constant across years
-mod1 <- stan_glmer(cbind(last_check,egg-last_check) ~ Island + (1 | site) + (1 | year),
+mod1 <- stan_glmer(cbind(last_check,egg-last_check) ~ island + (1 | site) + (1 | year),
                    data =  rhau,
                    family = binomial(link = logit),
                    prior = normal(0,5),
