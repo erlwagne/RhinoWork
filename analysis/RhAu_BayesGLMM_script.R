@@ -534,56 +534,56 @@ segments(x0 = px$eval.points[names(px$eval.points)=="50%"], y0 = 0,
 dev.new(width = 10, height = 7)
 par(mar = c(5.1,4.3,4.1,1))
 
-YY <- sort(unique(rhau$Year))
-newdata <- data.frame(Year = rep(YY, each = 2), Site = "newsite",
-                      Island = rep(c("DI","PI"), length(YY)))
-pfit <- posterior_linpred(mod2, transform = TRUE, re.form = ~ (1 | Year), newdata = newdata)
-pobs <- aggregate(cbind(Egg, LastCheck) ~ Year + Island, data = rhau, sum)
-pobs_ci <- binconf(pobs$LastCheck, n = pobs$Egg)
+YY <- sort(unique(rhau$year))
+newdata <- data.frame(year = rep(YY, each = 2), site = "newsite",
+                      island = rep(c("DI","PI"), length(YY)))
+pfit <- posterior_linpred(mod2, transform = TRUE, re.form = ~ (1 | year), newdata = newdata)
+pobs <- aggregate(cbind(egg, last_check) ~ year + island, data = rhau, sum)
+pobs_ci <- binconf(pobs$last_check, n = pobs$egg)
 eval.points <- range(pobs_ci, apply(pfit,2,quantile,c(0.025,0.975)))
 eval.points <- seq(min(eval.points), max(eval.points), length = 300)
-xyDI <- pfit[,newdata$Island=="DI"]
+xyDI <- pfit[,newdata$island=="DI"]
 pxyDI <- t(apply(xyDI, 2, function(x) 
   sm.density(x, eval.points = eval.points, display = "none")$estimate))
-xyPI <- pfit[,newdata$Island=="PI"]
+xyPI <- pfit[,newdata$island=="PI"]
 pxPI <- sm.density(as.vector(xyPI), display = "none")
 pxyPI <- t(apply(xyPI, 2, function(x) 
   sm.density(x, eval.points = eval.points, display = "none")$estimate))
 
-plot(newdata$Year[newdata$Island=="PI"], apply(pfit[,newdata$Island=="PI"],2,median), 
+plot(newdata$year[newdata$island=="PI"], apply(pfit[,newdata$island=="PI"],2,median), 
      las = 1, cex.axis = 1.2, cex.lab = 1.5, type = "l", lwd = 3, col = "cornflowerblue",
      xlab = "Year", ylab = "Probability of fledging", 
      ylim = range(pobs_ci, apply(pfit,2,quantile,c(0.025,0.975))), 
      xaxs = "i", xaxt = "n", yaxs = "i")
-lines(newdata$Year[newdata$Island=="DI"], apply(pfit[,newdata$Island=="DI"],2,median),
+lines(newdata$year[newdata$island=="DI"], apply(pfit[,newdata$island=="DI"],2,median),
       lwd = 3, col = "darkgray")
-axis(1, at = min(rhau$Year):max(rhau$Year))
+axis(1, at = min(rhau$year):max(rhau$year))
 
-#densregion(newdata$Year[newdata$Island=="PI"], eval.points, pxyPI, 
+#densregion(newdata$year[newdata$island=="PI"], eval.points, pxyPI, 
 #          colmax = transparent("darkgray",0.1), colmin = "transparent")
-polygon(c(newdata$Year[newdata$Island=="PI"], rev(newdata$Year[newdata$Island=="PI"])),
-        c(apply(pfit[,newdata$Island=="PI"],2,quantile,0.025), 
-          rev(apply(pfit[,newdata$Island=="PI"],2,quantile,0.975))), 
+polygon(c(newdata$year[newdata$island=="PI"], rev(newdata$year[newdata$island=="PI"])),
+        c(apply(pfit[,newdata$island=="PI"],2,quantile,0.025), 
+          rev(apply(pfit[,newdata$island=="PI"],2,quantile,0.975))), 
         col = transparent("cornflowerblue",0.7), border = NA)
-#densregion(newdata$Year[newdata$Island=="DI"], eval.points, pxyDI, 
+#densregion(newdata$year[newdata$island=="DI"], eval.points, pxyDI, 
 #           colmax = transparent("black",0.3), colmin = "transparent")
-polygon(c(newdata$Year[newdata$Island=="DI"], rev(newdata$Year[newdata$Island=="DI"])),
-        c(apply(pfit[,newdata$Island=="DI"],2,quantile,0.025), 
-          rev(apply(pfit[,newdata$Island=="DI"],2,quantile,0.975))), 
+polygon(c(newdata$year[newdata$island=="DI"], rev(newdata$year[newdata$island=="DI"])),
+        c(apply(pfit[,newdata$island=="DI"],2,quantile,0.025), 
+          rev(apply(pfit[,newdata$island=="DI"],2,quantile,0.975))), 
         col = transparent("darkgray",0.7), border = NA)
 
-YYPI <- pobs$Year[pobs$Island=="PI"]
+YYPI <- pobs$year[pobs$island=="PI"]
 YYPI <- YYPI + c(0.05, rep(-0.05, length(YYPI) - 2), -0.1)
-points(YYPI, pobs.ci[pobs$Island=="PI","PointEst"], 
+points(YYPI, pobs_ci[pobs$island=="PI","PointEst"], 
        col = "cornflowerblue", pch = 15, cex = 1.5)
-segments(x0 = YYPI, y0 = pobs.ci[pobs$Island=="PI","Lower"],
-         y1 = pobs.ci[pobs$Island=="PI","Upper"], col = "cornflowerblue")
-YYDI <- pobs$Year[pobs$Island=="DI"]
+segments(x0 = YYPI, y0 = pobs_ci[pobs$island=="PI","Lower"],
+         y1 = pobs_ci[pobs$island=="PI","Upper"], col = "cornflowerblue")
+YYDI <- pobs$year[pobs$island=="DI"]
 YYDI <- YYDI + c(0.1, rep(0.05, length(YYDI) - 2), -0.05)
-points(YYDI, pobs.ci[pobs$Island=="DI","PointEst"], 
+points(YYDI, pobs_ci[pobs$island=="DI","PointEst"], 
        col = "darkgray", pch = 16, cex = 1.5)
-segments(x0 = YYDI, y0 = pobs_ci[pobs$Island=="DI","Lower"],
-         y1 = pobs_ci[pobs$Island=="DI","Upper"], col = "darkgray")
+segments(x0 = YYDI, y0 = pobs_ci[pobs$island=="DI","Lower"],
+         y1 = pobs_ci[pobs$island=="DI","Upper"], col = "darkgray")
 
 legend("topleft", c("Protection","Destruction"), lwd = 3, pch = c(15,16), 
        col = c("cornflowerblue","darkgray"))
