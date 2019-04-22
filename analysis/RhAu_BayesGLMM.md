@@ -1,34 +1,24 @@
----
-title: Nest Success of Two Rhinoceros Auklet Colonies in the Salish Sea and California
-  Current
-author: "Eric Wagner, Eric Buhle, ..."
-date: "April 21, 2019"
-output:
-  html_document:
-    keep_md: true
-    df_print: paged
-    fig_caption: yes
-    toc: yes
-    toc_float: yes
-  word_document:
-    toc: yes
----
+Nest Success of Two Rhinoceros Auklet Colonies in the Salish Sea and
+California Current
+================
+Eric Wagner, Eric Buhle, …
+April 21, 2019
 
-
-
+  - [Overview](#overview)
+  - [Setup and data](#setup-and-data)
 
 # Overview
 
-This is a Rhinoceros Auklet from the Protection Island colony:
+This is a Rhinoceros Auklet from the Protection Island
+colony:
 
 ![](https://www.eopugetsound.org/sites/default/files/styles/magazinewidth_592px/public/topical_articles/images/16343412270_5cfaa5c480_o.jpg?itok=WjzI1_2K)
 
 # Setup and data
 
-First we load the libraries and functions we'll use.
+First we load the libraries and functions we’ll use.
 
-
-```r
+``` r
 if(!require(here)) install.packages("here::here")
 library(here)
 if(!require(rstanarm)) install.package("rstanarm")
@@ -56,10 +46,10 @@ library(dplyr)
 source(here::here("analysis","loo_compair.R"))
 ```
 
-Next we'll read in the datasets from various sources and manipulate them into a usable format.
+Next we’ll read in the datasets from various sources and manipulate them
+into a usable format.
 
-
-```r
+``` r
 # Nest success data
 nest_data <- read.csv(here::here("data","RhAu2.csv"), fileEncoding="UTF-8-BOM")
 names(nest_data) <- gsub("lastcheck", "last_check", tolower(names(nest_data)))
@@ -163,5 +153,3 @@ env_data <- Reduce(inner_join, list(select(pdo, c(year, pdo_index)),
                                     select(chla_PI, c(year, chla_PI_spring)),
                                     select(biol_trans, c(year, st_onset, st_duration))))
 ```
-
-

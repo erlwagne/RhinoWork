@@ -4,6 +4,9 @@ title: Nest Success of Two Rhinoceros Auklet Colonies in the Salish Sea and Cali
 author: "Eric Wagner, Eric Buhle, ..."
 date: "April 21, 2019"
 output:
+  github_document:
+    toc: true
+    toc_depth: 3
   html_document:
     keep_md: true
     df_print: paged
