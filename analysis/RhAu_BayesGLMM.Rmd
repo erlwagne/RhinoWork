@@ -26,6 +26,7 @@ library(captioner)
 fig_nums <- captioner("Figure S", suffix = ": ", auto_space = FALSE, 
                       style = "b", style_prefix = TRUE)
 ```
+
 ```{r width, include=FALSE}
 options(width = 130)
 ```
@@ -68,9 +69,20 @@ library(dplyr)
 source(here::here("analysis","loo_compair.R"))
 ```
 
+```{r load_saved_objects, echo = FALSE}
+if(file.exists(here::here("analysis","cache","occ_stanfit_loo.RData"))) {
+  load(here::here("analysis","cache","occ_stanfit_loo.RData"))
+  refit_occ <- FALSE
+} else refit_occ <- TRUE
+if(file.exists(here::here("analysis","cache","suc_stanfit_loo.RData"))) {
+  load(here::here("analysis","cache","suc_stanfit_loo.RData"))
+  refit_suc <- FALSE
+} else refit_suc <- TRUE
+```
+
 Next we'll read in the datasets from various sources and manipulate them into a usable format.
 
-```{r data, eval = FALSE}
+```{r data, message = FALSE, warning = FALSE}
 # Nest success data
 nest_data <- read.csv(here::here("data","RhAu2.csv"), fileEncoding="UTF-8-BOM")
 names(nest_data) <- gsub("lastcheck", "last_check", tolower(names(nest_data)))
@@ -174,5 +186,156 @@ env_data <- Reduce(inner_join, list(select(pdo, c(year, pdo_index)),
                                     select(chla_PI, c(year, chla_PI_spring)),
                                     select(biol_trans, c(year, st_onset, st_duration))))
 ```
+
+# Principal Components Analysis of Oceanographic Indicators
+
+Let's explore the patterns of (a)synchrony among the oceanographic indicators to see how severe the multicollinearity might be if they were used as raw regression inputs. 
+
+```{r env_corrplot, fig.height = 9, fig.width = 9}
+dat <- select(env_data, c(pdo_index, mei_avg, sst_DI_spring, sst_PI_spring, 
+                          cui_spring, chla_DI_spring, chla_PI_spring, 
+                          st_onset, st_duration))
+corrplot(cor(dat, use = "pairwise"), method = "ellipse", diag = FALSE)
+```
+
+Now we perform a principal components analysis to extract the major trends in the suite of oceanographic indicators for use as regression inputs.
+
+```{r PCA}
+pca_env <- prcomp(~ pdo_index + mei_avg + sst_DI_spring + sst_PI_spring + 
+                    cui_spring + chla_DI_spring + chla_PI_spring + st_onset, 
+                  data = env_data, scale = TRUE)
+
+pca_env            # rotation matrix gives the loadings
+summary(pca_env)   # proportion of variance associated with each PC
+
+## Add PC1 and PC2 to covariate data
+scores <- predict(pca_env, newdata = env_data)
+env_data <- data.frame(env_data, PC1 = scale(scores[,"PC1"]), PC2 = scale(scores[,"PC2"]))
+
+## Merge PC1 and PC2 into nest data
+rhau <- left_join(nest_data, select(env_data, c(year, PC1, PC2)))
+```
+```{r PCA_plots, fig.height = 9, fig.width = 9}
+par(mfcol = c(2,2))
+# scree plot
+imp <- summary(pca_env)$importance["Proportion of Variance",]
+barplot(imp, xlab = "", ylab = "Proportion of variance", names.arg = names(imp))   
+# biplot of PCAs and oceanographic indicators
+biplot(pca_env) 
+# PC1 loadings
+xloc <- barplot(pca_env$rotation[,"PC1"], xaxt = "n", main = "PC1 loadings")
+text(xloc, par("usr")[3], labels = dimnames(pca_env$rotation)[[1]], adj = c(1,1), srt = 45, 
+     xpd = TRUE)
+# PC2 loadings
+xloc <- barplot(pca_env$rotation[,"PC2"], xaxt = "n", main = "PC2 loadings")
+text(xloc, par("usr")[3], labels = dimnames(pca_env$rotation)[[1]], adj = c(1,1), srt = 45, 
+     xpd = TRUE)
+```
+
+# GLMMs of Burrow Occupancy
+
+Now we are ready to start fitting some GLMMs to the burrow occupancy data...[more on modeling, explanations of each model]
+
+```{r fit_occ0, eval = refit_occ}
+## Random effects of site and year
+
+# Intercept-only model 
+occ0 <- stan_glmer(cbind(egg, viable - egg) ~ (1 | site) + (1 | year),
+                   data =  rhau,
+                   family = binomial(link = logit),
+                   prior_intercept = normal(0,5),
+                   prior_covariance = decov(),
+                   chains = 3, iter = 2000, warmup = 1000, cores = 3)
+```
+```{r summary_occ0}
+summary(occ0, prob = c(0.025,0.5,0.975), digits = 2)
+```
+
+
+```{r fit_occ1, eval = refit_occ}
+# Inter-island differences, constant across years
+occ1 <- stan_glmer(cbind(egg, viable - egg) ~ island + (1 | site) + (1 | year),
+                   data =  rhau,
+                   family = binomial(link = logit),
+                   prior = normal(0,5),
+                   prior_intercept = normal(0,5),
+                   prior_covariance = decov(),
+                   chains = 3, iter = 2000, warmup = 1000, cores = 3)
+```
+```{r summary_occ1}
+summary(occ1, prob = c(0.025,0.5,0.975), digits = 2)
+```
+
+```{r fit_occ2, eval = refit_occ}
+# Inter-island differences, varying among years
+occ2 <- stan_glmer(cbind(egg, viable - egg) ~ island + (1 | site) + (island | year),
+                   data =  rhau,
+                   family = binomial(link = logit),
+                   prior = normal(0,5),
+                   prior_intercept = normal(0,5),
+                   prior_covariance = decov(),
+                   chains = 3, iter = 2000, warmup = 1000, cores = 3)
+```
+
+```{r summary_occ2}
+summary(occ2, prob = c(0.025,0.5,0.975), digits = 2)
+```
+
+```{r fit_occ3, eval = refit_occ}
+# Inter-island differences, varying among years, plus PC1 + PC2
+occ3 <- stan_glmer(cbind(egg, viable - egg) ~ island + PC1 + PC2 + (1 | site) + (island | year),
+                   data =  rhau,
+                   family = binomial(link = logit),
+                   prior = normal(0,5),
+                   prior_intercept = normal(0,5),
+                   prior_covariance = decov(),
+                   chains = 3, iter = 2000, warmup = 1000, cores = 3)
+```
+
+```{r summary_occ3}
+summary(occ3, prob = c(0.025,0.5,0.975), digits = 2)
+```
+
+```{r fit_occ4, eval = refit_occ}
+# Inter-island differences plus PC1 + PC2, no random time-variation
+occ4 <- stan_glmer(cbind(egg, viable - egg) ~ island + PC1 + PC2 + (1 | site),
+                   data =  rhau,
+                   family = binomial(link = logit),
+                   prior = normal(0,5),
+                   prior_intercept = normal(0,5),
+                   prior_covariance = decov(),
+                   chains = 3, iter = 2000, warmup = 1000, cores = 3)
+```
+
+```{r summary_occ4}
+summary(occ4, prob = c(0.025,0.5,0.975), digits = 2)
+```
+
+We compare the expected out-of-sample predictive performance of the candidate models using the Bayesian Pareto-smoothed approxiamte leave-one-out cross-validation score...
+
+```{r loo_occ, eval = refit_occ}
+## Model selection by approximate leave-one-out cross-validation
+occ_loos <-  lapply(list(occ0 = occ0, occ1 = occ1, occ2 = occ2, occ3 = occ3, occ4 = occ4), loo)
+
+# unpaired comparisons
+occ_compare <- loo_compare(occ_loos)
+
+# pairwise comparisons
+occ_compair <- loo_compair(occ_loos)
+```
+
+```{r print_loo_occ}
+occ_loos
+print(occ_compare, simplify = FALSE)
+occ_compair
+```
+
+If we have refit the models, we cache the results to save time...
+
+```{r cache_occ, eval = !refit_occ}
+## Cache stanfits and loo objects
+save(list = grep("occ", ls(), value = TRUE), file = here::here("analysis","cache","occ_stanfit_loo.RData"))
+```
+
 
 
