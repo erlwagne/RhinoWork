@@ -3,6 +3,7 @@
 ## Set graphics device
 if(.Platform$OS.type == "windows") options(device = windows) else options(device = quartz)
 
+library(here)
 library(rstanarm)
 library(bayesplot)
 library(Hmisc)
@@ -19,14 +20,13 @@ library(dplyr)
 # DATA  
 #--------------------------
 
-data_path <- file.path(getwd(),"data")
-
 # Nest success data
-nest_data <- read.csv(file.path(data_path,"RhAu2.csv"), fileEncoding="UTF-8-BOM")
+nest_data <- read.csv(here::here("data","RhAu2.csv"), fileEncoding="UTF-8-BOM")
+names(nest_data) <- gsub("lastcheck", "last_check", tolower(names(nest_data)))
 
 # PDO from ERSST V3b https://www.esrl.noaa.gov/psd/pdo/ Using EOF from 1920 to 2014 for N Pacific
 # Monthly 1854-2019
-pdo <- read.csv(file.path(data_path, "pdo.timeseries.ersstv3b.csv"), na.strings = "-9999.000")
+pdo <- read.csv(here::here("data","pdo.timeseries.ersstv3b.csv"), na.strings = "-9999.000")
 colnames(pdo)[2] <- "pdo"
 pdo$Date <- ymd(pdo$Date)
 pdo <- mutate(pdo, year = ifelse(month(Date) > 8, year(Date) + 1, year(Date)),
@@ -37,7 +37,7 @@ pdo <- data.frame(pdo, pdo_index = rowMeans(select(pdo, Nov:Mar)))
 
 # MEI v.2 1979-2018
 # Wide format: rows are years, columns are months
-mei <- read.csv(file.path(data_path, "MEIv2.csv"))
+mei <- read.csv(here::here("data","MEIv2.csv"))
 colnames(mei) <- tolower(colnames(mei))
 mei <- gather(mei, months, mei, decjan:novdec)
 mei <- mutate(mei, year = ifelse(months %in% c("sepoct","octnov","novdec"), year + 1, year))
@@ -46,76 +46,90 @@ mei <- select(mei, c(year,sepoct,octnov,novdec,decjan,
                      janfeb,febmar,marapr,aprmay,mayjun,junjul,julaug,augsep))
 mei <- data.frame(mei, mei_avg = rowMeans(select(mei, sepoct:augsep)))
 
-# Area-Averaged of Sea Surface Temperature at 11 microns (Day) monthly 4 km [MODIS-Aqua ()
-# at Protection and Destruction Island
-# Monthly 2009-2018
-sst_DI <- read.csv(file.path(data_path,"SST_DI_2002_2019.csv"), skip = 8, na.strings = "-32767")[,1:2]
-colnames(sst_DI) <- c("date","sst")
-sst_DI$date <- mdy_hm(sst_DI$date)
-sst_DI <- mutate(sst_DI, year = year(date), month = month(date, label = TRUE), date = NULL)
-sst_DI <- spread(sst_DI, month, sst)
-sst_DI <- mutate(sst_DI, sst_DI_spring = rowMeans(select(sst_DI, Apr:Jun)),
-                 sst_DI_summer = rowMeans(select(sst_DI, Jul:Aug)))
-
-sst_PI <- read.csv(file.path(data_path,"SST_PI_2002_2019.csv"), skip = 8, na.strings = "-32767")[,1:2]
-colnames(sst_PI) <- c("date","sst")
-sst_PI$date <- ymd_hms(sst_PI$date)
-sst_PI <- mutate(sst_PI, year = year(date), month = month(date, label = TRUE), date = NULL)
-sst_PI <- spread(sst_PI, month, sst)
-sst_PI <- mutate(sst_PI, sst_PI_spring = rowMeans(select(sst_PI, Apr:Jun)), 
-                 sst_PI_summer = rowMeans(select(sst_PI, Jul:Aug)))
-
 # Average monthly SST from DFO stations
 # Wide format: year x month
-sst_amph <- read.csv(file.path(data_path, grep("Amphitrite", list.files(data_path), value = TRUE)),
-                                   skip = 1, na.strings = "99.99")
+sst_amph <- read.csv(here::here("data",grep("Amphitrite", list.files(here::here("data")), 
+                                            value = TRUE)),
+                     skip = 1, na.strings = "99.99")
 colnames(sst_amph) <- tolower(colnames(sst_amph))
-sst_amph <- mutate(sst_amph, sst_amph_spring = rowMeans(select(sst_amph, apr:jun)),
-                   sst_amph_summer = rowMeans(select(sst_amph, jul:aug)))
+sst_amph <- mutate(sst_amph, sst_amph_spring = rowMeans(select(sst_amph, apr:jun)))
 
-sst_race <- read.csv(file.path(data_path, grep("Race_Rocks", list.files(data_path), value = TRUE)),
+sst_race <- read.csv(here::here("data",grep("Race_Rocks", list.files(here::here("data")), 
+                                            value = TRUE)),
                      skip = 1, na.strings = "99.99")
 colnames(sst_race) <- tolower(colnames(sst_race))
-sst_race <- mutate(sst_race, sst_race_spring = rowMeans(select(sst_race, apr:jun)),
-                   sst_race_summer = rowMeans(select(sst_race, jul:aug)))
+sst_race <- mutate(sst_race, sst_race_spring = rowMeans(select(sst_race, apr:jun)))
 
 # Coastal Upwelling Index 48N 125W 1946-2018
 # Wide format: rows are years, columns are months
-cui <- read.csv(file.path(data_path,"CoastalUpwellingIndex.csv"))[,-1]
+cui <- read.csv(here::here("data","CoastalUpwellingIndex.csv"))[,-1]
 colnames(cui)[1] <- "year"
-cui <- mutate(cui, cui_spring = rowMeans(select(cui, Apr:Jun)), 
-              cui_summer = rowMeans(select(cui, Jul:Aug)))
+cui <- mutate(cui, cui_spring = rowMeans(select(cui, Apr:Jun)))
 
 # Biological spring transition from NWFSC Ocean Ecosystem Indicators
 # Long format, 1970-2018
-biol_trans <- read.csv(file.path(data_path, "biological_spring_transition_NWFSC.csv"),
+biol_trans <- read.csv(here::here("data","biological_spring_transition_NWFSC.csv"),
                        skip = 10, na.strings = "Never ", stringsAsFactors = FALSE)
 colnames(biol_trans) <- c("year","st_onset","st_end","st_duration")
 biol_trans <- mutate(biol_trans, st_onset = yday(ydm(paste(year, st_onset, sep = "-"))))
 biol_trans <- mutate(biol_trans, st_onset = replace_na(st_onset, 365), 
                      st_end = replace_na(st_end, 365))
 
+# Area-Averaged of Sea Surface Temperature at 11 microns (Day) monthly 4 km [MODIS-Aqua ()
+# at Protection and Destruction Island
+# Monthly 2009-2018
+sst_DI <- read.csv(here::here("data","SST_DI_2002_2019.csv"), skip = 8, 
+                   na.strings = "-32767")[,1:2]
+colnames(sst_DI) <- c("date","sst")
+sst_DI$date <- mdy_hm(sst_DI$date)
+sst_DI <- mutate(sst_DI, year = year(date), month = month(date, label = TRUE), date = NULL)
+sst_DI <- spread(sst_DI, month, sst)
+sst_DI <- mutate(sst_DI, sst_DI_spring = rowMeans(select(sst_DI, Apr:Jun)))
+
+sst_PI <- read.csv(here::here("data","SST_PI_2002_2019.csv"), skip = 8, 
+                   na.strings = "-32767")[,1:2]
+colnames(sst_PI) <- c("date","sst")
+sst_PI$date <- ymd_hms(sst_PI$date)
+sst_PI <- mutate(sst_PI, year = year(date), month = month(date, label = TRUE), date = NULL)
+sst_PI <- spread(sst_PI, month, sst)
+sst_PI <- mutate(sst_PI, sst_PI_spring = rowMeans(select(sst_PI, Apr:Jun)))
+
+#  Area-Averaged of Chlorophyll a concentration monthly 4 km [MODIS-Aqua MODISA_L3m_CHL v2018]
+# at Protection and Destruction Island
+# Monthly 2002-2019
+chla_DI <- read.csv(here::here("data","Chla_DI_2002_2019.csv"), skip = 8, na.strings = "-32767")[,1:2]
+colnames(chla_DI) <- c("date","chla")
+chla_DI$date <- mdy_hm(chla_DI$date)
+chla_DI <- mutate(chla_DI, year = year(date), month = month(date, label = TRUE), date = NULL)
+chla_DI <- spread(chla_DI, month, chla)
+chla_DI <- mutate(chla_DI, chla_DI_spring = rowMeans(select(chla_DI, Apr:Jun)))
+
+chla_PI <- read.csv(here::here("data","Chla_PI_2002_2019.csv"), skip = 8, na.strings = "-32767")[,1:2]
+colnames(chla_PI) <- c("date","chla")
+chla_PI$date <- mdy_hm(chla_PI$date)
+chla_PI <- mutate(chla_PI, year = year(date), month = month(date, label = TRUE), date = NULL)
+chla_PI <- spread(chla_PI, month, chla)
+chla_PI <- mutate(chla_PI, chla_PI_spring = rowMeans(select(chla_PI, Apr:Jun)))
 
 # Merge covariate data
 env_data <- Reduce(inner_join, list(select(pdo, c(year, pdo_index)), 
                                     select(mei, c(year, mei_avg)), 
-                                    select(sst_DI, c(year, sst_DI_spring, sst_DI_summer)), 
-                                    select(sst_PI, c(year, sst_PI_spring, sst_PI_summer)),
-                                    select(sst_amph, c(year, sst_amph_spring, sst_amph_summer)),
-                                    select(sst_race, c(year, sst_race_spring, sst_race_summer)),
-                                    select(cui, c(year, cui_spring, cui_summer)),
+                                    select(sst_DI, c(year, sst_DI_spring)), 
+                                    select(sst_PI, c(year, sst_PI_spring)),
+                                    select(sst_amph, c(year, sst_amph_spring)),
+                                    select(sst_race, c(year, sst_race_spring)),
+                                    select(cui, c(year, cui_spring)),
+                                    select(chla_DI, c(year, chla_DI_spring)),
+                                    select(chla_PI, c(year, chla_PI_spring)),
                                     select(biol_trans, c(year, st_onset, st_duration))))
-                   
-
 
 #---------------------------------
 # PCA of Oceanographic Indicators
 #---------------------------------
 
 ## Correlation plot of indicators
-dat <- select(env_data, c(pdo_index, mei_avg, sst_DI_spring, sst_DI_summer, 
-                          sst_PI_spring, sst_PI_summer, sst_amph_spring, sst_amph_summer, 
-                          sst_race_spring, sst_race_summer, cui_spring, cui_summer, 
+dat <- select(env_data, c(pdo_index, mei_avg, sst_DI_spring, sst_PI_spring, 
+                          cui_spring, chla_DI_spring, chla_PI_spring, 
                           st_onset, st_duration))
 # colnames(dat) <- c("SST spring (DI)", "SST spring (PI)", "MEI", "Coastal Upwelling (Spring)", 
 #                    "Spring Transition (Onset)", "PDO Index")
@@ -124,27 +138,13 @@ corrplot(cor(dat, use = "pairwise"), method = "ellipse", diag = FALSE)
 
 ## Pairs plot of indicators
 dev.new(width = 12, height = 12)
-pairs(select(env_data, c(pdo_index, mei_avg, sst_DI_spring, sst_DI_summer, 
-                          sst_PI_spring, sst_PI_summer, sst_amph_spring, sst_amph_summer, 
-                          sst_race_spring, sst_race_summer, cui_spring, cui_summer, 
-                          st_onset, st_duration)), 
+pairs(select(env_data, c(pdo_index, mei_avg, sst_DI_spring, sst_PI_spring, 
+                         cui_spring, chla_DI_spring, chla_PI_spring, st_onset, st_duration)), 
       gap = 0.2, pch = 16, cex = 1.2, col = transparent("slategray",0.6))
 
-## Stacked time series plots of indicators
-c1 <- "slategray"
-
-dev.new(width = 7, height = 12)
-par(mfrow = c(4,1))
-
-plot(env_data$year, env_data$pdo_index, pch = "", las = 1, xlab = "", ylab = "PDO",
-     cex.lab = 1.2, cex.axis = 1, xaxt = "n", bty = "n")
-abline(h = 0)
-abline(v = env_data$year, col = "lightgray")
-lines(env_data$year, env_data$pdo_index, col = c1, lwd = 3)
-
 # PCA
-pca_env <- prcomp(~ pdo_index + mei_avg + sst_DI_spring + sst_PI_spring + cui_spring + cui_summer +
-                    st_onset + st_duration, 
+pca_env <- prcomp(~ pdo_index + mei_avg + sst_DI_spring + sst_PI_spring + 
+                    cui_spring + chla_DI_spring + chla_PI_spring + st_onset, 
                   data = env_data, scale = TRUE)
 
 pca_env            # rotation matrix gives the loadings
@@ -165,11 +165,12 @@ text(xloc, par("usr")[3], labels = dimnames(pca_env$rotation)[[1]], adj = c(1,1)
 xloc <- barplot(pca_env$rotation[,"PC2"], xaxt = "n", main = "PC2 loadings")
 text(xloc, par("usr")[3], labels = dimnames(pca_env$rotation)[[1]], adj = c(1,1), srt = 45, xpd = TRUE)
 
-# Add PC1 and PC2 to covariate data
+
+## Add PC1 and PC2 to covariate data
 scores <- predict(pca_env, newdata = env_data)
 env_data <- data.frame(env_data, PC1 = scale(scores[,"PC1"]), PC2 = scale(scores[,"PC2"]))
 
-# Merge PC1 and PC2 into nest data
+## Merge PC1 and PC2 into nest data
 rhau <- left_join(nest_data, select(env_data, c(year, PC1, PC2)))
 
 #---------------------------------
