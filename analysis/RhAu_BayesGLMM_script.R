@@ -7,6 +7,7 @@ library(here)
 library(rstanarm)
 library(bayesplot)
 library(ggplot2)
+library(gridExtra)
 library(Hmisc)
 library(sm)
 library(loo)
@@ -432,7 +433,6 @@ suc4 <- stan_glmer(cbind(last_check, egg - last_check) ~ island + PC1 + PC2 + (1
 summary(suc4, prob = c(0.025,0.5,0.975), digits = 2)
 launch_shinystan(suc4)
 
-## Model selection by approximate leave-one-out cross-validation
 ## Model selection by approximate leave-one-out cross-validation
 suc_loos <-  lapply(list(suc0 = suc0, suc1 = suc1, suc2 = suc2, suc3 = suc3, suc4 = suc4), 
                     loo, k_threshold = 0.7)
