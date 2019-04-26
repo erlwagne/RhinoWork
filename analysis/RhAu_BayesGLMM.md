@@ -46,6 +46,8 @@ if(!require(tidyr)) install.package("tidyr")
 library(tidyr)
 if(!require(dplyr)) install.package("dplyr")
 library(dplyr)
+if(!require(gridExtra)) install.package("gridExtra")
+library(gridExtra)
 source(here::here("analysis","loo_compair.R"))
 ```
 
@@ -239,6 +241,34 @@ text(xloc, par("usr")[3], labels = dimnames(pca_env$rotation)[[1]], adj = c(1,1)
 
 ![](RhAu_BayesGLMM_files/figure-gfm/PCA_plots-1.png)<!-- -->
 
+``` r
+## Time-series plots of indicators and PCs
+pdo.gg <- ggplot(data = env_data, aes(x = year, y = pdo_index)) + geom_line() +
+  labs(x = "Year", y = "PDO", size = 5) + theme_gray()
+mei.gg <- ggplot(data = env_data, aes(x = year, y = mei_avg)) + geom_line()+
+  labs(x = "Year", y = "MEI") + theme_gray()
+sstdi.gg <- ggplot(data = env_data, aes(x = year, y = sst_DI_spring)) + geom_line() +
+  labs(x = "Year", y = "SST (DI)") + theme_gray()
+sstpi.gg <- ggplot(data = env_data, aes(x = year, y = sst_PI_spring)) + geom_line() +
+  labs(x = "Year", y = "SST (PI)") + theme_gray()
+cui.gg <- ggplot(data = env_data, aes(x = year, y = cui_spring)) + geom_line() +
+  labs(x = "Year", y = "Coastal Upwelling") + theme_gray()
+sto.gg <- ggplot(data = env_data, aes(x = year, y = st_onset)) + geom_line() +
+  labs(x = "Year", y = "Spring Transition (d)") + theme_gray()
+chldi.gg <- ggplot(data = env_data, aes(x = year, y = chla_DI_spring)) + geom_line() +
+  labs(x = "Year", y = "Chl a (DI)") + theme_gray()
+chlpi.gg <- ggplot(data = env_data, aes(x = year, y = chla_PI_spring)) + geom_line() +
+  labs(x = "Year", y = "Chl a (PI)") + theme_gray()
+pc1.gg <- ggplot(data = env_data, aes(x = year, y = PC1)) + geom_line() +
+  labs(x = "Year", y = "PC1") + theme_gray()
+pc2.gg <- ggplot(data = env_data, aes(x = year, y = PC2)) + geom_line() +
+  labs(x = "Year", y = "PC2") + theme_gray()
+grid.arrange(pdo.gg, mei.gg, sstdi.gg, sstpi.gg, cui.gg, sto.gg, chldi.gg, chlpi.gg, pc1.gg, pc2.gg,
+             nrow = 5, ncol = 2)
+```
+
+![](RhAu_BayesGLMM_files/figure-gfm/env_timeseries_plots-1.png)<!-- -->
+
 # GLMMs of Burrow Occupancy
 
 Now we are ready to start fitting some GLMMs to the burrow occupancy
@@ -275,71 +305,71 @@ Model Info:
 
 Estimates:
                                       mean    sd      2.5%    50%     97.5%
-(Intercept)                            0.54    0.11    0.32    0.54    0.75
-b[(Intercept) site:Boathouse]         -0.25    0.16   -0.58   -0.24    0.03
-b[(Intercept) site:Catwalk.Salmon]     0.04    0.18   -0.31    0.04    0.42
-b[(Intercept) site:Catwalk.Willow]    -0.30    0.18   -0.66   -0.29    0.05
-b[(Intercept) site:Grassy.Knoll]      -0.09    0.19   -0.49   -0.09    0.28
-b[(Intercept) site:s741]              -0.18    0.18   -0.56   -0.18    0.16
-b[(Intercept) site:s742]               0.20    0.19   -0.14    0.19    0.57
-b[(Intercept) site:s743]               0.22    0.19   -0.12    0.22    0.62
-b[(Intercept) site:s744]              -0.02    0.18   -0.39   -0.01    0.34
-b[(Intercept) site:s746]              -0.20    0.18   -0.57   -0.19    0.15
-b[(Intercept) site:s747]               0.23    0.19   -0.13    0.22    0.61
-b[(Intercept) site:s748]              -0.16    0.22   -0.61   -0.15    0.24
-b[(Intercept) site:s749]               0.25    0.19   -0.09    0.24    0.64
-b[(Intercept) site:s750]               0.32    0.20   -0.03    0.31    0.74
+(Intercept)                            0.54    0.11    0.33    0.54    0.75
+b[(Intercept) site:Boathouse]         -0.26    0.16   -0.58   -0.26    0.04
+b[(Intercept) site:Catwalk.Salmon]     0.05    0.18   -0.31    0.04    0.39
+b[(Intercept) site:Catwalk.Willow]    -0.30    0.18   -0.68   -0.29    0.04
+b[(Intercept) site:Grassy.Knoll]      -0.10    0.20   -0.51   -0.09    0.28
+b[(Intercept) site:s741]              -0.18    0.18   -0.55   -0.18    0.16
+b[(Intercept) site:s742]               0.20    0.18   -0.12    0.20    0.58
+b[(Intercept) site:s743]               0.22    0.19   -0.13    0.22    0.63
+b[(Intercept) site:s744]              -0.02    0.17   -0.38   -0.02    0.31
+b[(Intercept) site:s746]              -0.20    0.19   -0.58   -0.19    0.15
+b[(Intercept) site:s747]               0.23    0.19   -0.12    0.22    0.63
+b[(Intercept) site:s748]              -0.16    0.21   -0.58   -0.15    0.25
+b[(Intercept) site:s749]               0.25    0.18   -0.09    0.25    0.62
+b[(Intercept) site:s750]               0.32    0.19   -0.03    0.31    0.74
 b[(Intercept) site:s751]               0.12    0.21   -0.27    0.11    0.55
-b[(Intercept) site:Salmon.Sequel]     -0.16    0.18   -0.53   -0.15    0.18
-b[(Intercept) site:SW.Point]          -0.25    0.16   -0.57   -0.24    0.05
-b[(Intercept) site:Willow.Gully]       0.19    0.18   -0.14    0.18    0.55
-b[(Intercept) year:2010]               0.10    0.13   -0.10    0.08    0.40
-b[(Intercept) year:2011]               0.04    0.12   -0.19    0.03    0.30
-b[(Intercept) year:2012]              -0.02    0.11   -0.25   -0.01    0.21
-b[(Intercept) year:2013]              -0.04    0.12   -0.29   -0.02    0.19
-b[(Intercept) year:2014]              -0.08    0.12   -0.35   -0.06    0.11
-b[(Intercept) year:2015]              -0.04    0.12   -0.30   -0.03    0.19
-b[(Intercept) year:2016]               0.16    0.14   -0.05    0.14    0.49
-b[(Intercept) year:2017]              -0.09    0.12   -0.35   -0.07    0.12
-b[(Intercept) year:2018]              -0.05    0.11   -0.30   -0.04    0.16
-Sigma[site:(Intercept),(Intercept)]    0.09    0.06    0.02    0.08    0.24
+b[(Intercept) site:Salmon.Sequel]     -0.16    0.19   -0.52   -0.16    0.20
+b[(Intercept) site:SW.Point]          -0.24    0.16   -0.58   -0.24    0.06
+b[(Intercept) site:Willow.Gully]       0.18    0.17   -0.13    0.18    0.55
+b[(Intercept) year:2010]               0.10    0.12   -0.10    0.08    0.38
+b[(Intercept) year:2011]               0.04    0.12   -0.18    0.03    0.32
+b[(Intercept) year:2012]              -0.02    0.11   -0.25   -0.01    0.19
+b[(Intercept) year:2013]              -0.04    0.12   -0.30   -0.02    0.19
+b[(Intercept) year:2014]              -0.09    0.12   -0.37   -0.06    0.13
+b[(Intercept) year:2015]              -0.03    0.11   -0.28   -0.02    0.18
+b[(Intercept) year:2016]               0.16    0.14   -0.04    0.14    0.47
+b[(Intercept) year:2017]              -0.09    0.12   -0.36   -0.07    0.10
+b[(Intercept) year:2018]              -0.05    0.11   -0.30   -0.03    0.15
+Sigma[site:(Intercept),(Intercept)]    0.09    0.05    0.02    0.08    0.22
 Sigma[year:(Intercept),(Intercept)]    0.03    0.04    0.00    0.02    0.13
-mean_PPD                               7.38    0.19    7.01    7.39    7.76
-log-posterior                       -312.27    5.54 -323.94 -312.03 -302.44
+mean_PPD                               7.39    0.19    7.00    7.40    7.76
+log-posterior                       -312.31    5.47 -323.92 -311.90 -302.88
 
 Diagnostics:
                                     mcse Rhat n_eff
-(Intercept)                         0.00 1.00 1313 
-b[(Intercept) site:Boathouse]       0.00 1.00 3090 
-b[(Intercept) site:Catwalk.Salmon]  0.00 1.00 3559 
-b[(Intercept) site:Catwalk.Willow]  0.00 1.00 2921 
-b[(Intercept) site:Grassy.Knoll]    0.00 1.00 3617 
-b[(Intercept) site:s741]            0.00 1.00 3488 
-b[(Intercept) site:s742]            0.00 1.00 3107 
-b[(Intercept) site:s743]            0.00 1.00 2868 
-b[(Intercept) site:s744]            0.00 1.00 3872 
-b[(Intercept) site:s746]            0.00 1.00 3170 
-b[(Intercept) site:s747]            0.00 1.00 2869 
-b[(Intercept) site:s748]            0.00 1.00 3170 
-b[(Intercept) site:s749]            0.00 1.00 2452 
-b[(Intercept) site:s750]            0.00 1.00 2406 
-b[(Intercept) site:s751]            0.00 1.00 3453 
-b[(Intercept) site:Salmon.Sequel]   0.00 1.00 3116 
-b[(Intercept) site:SW.Point]        0.00 1.00 2845 
-b[(Intercept) site:Willow.Gully]    0.00 1.00 3065 
-b[(Intercept) year:2010]            0.00 1.00 2175 
-b[(Intercept) year:2011]            0.00 1.00 2386 
-b[(Intercept) year:2012]            0.00 1.00 2784 
-b[(Intercept) year:2013]            0.00 1.00 2258 
-b[(Intercept) year:2014]            0.00 1.00 1937 
-b[(Intercept) year:2015]            0.00 1.00 2405 
-b[(Intercept) year:2016]            0.00 1.00 1497 
-b[(Intercept) year:2017]            0.00 1.00 2083 
-b[(Intercept) year:2018]            0.00 1.00 2178 
-Sigma[site:(Intercept),(Intercept)] 0.00 1.00 1258 
-Sigma[year:(Intercept),(Intercept)] 0.00 1.00 1295 
-mean_PPD                            0.00 1.00 3401 
-log-posterior                       0.21 1.00  717 
+(Intercept)                         0.00 1.00 1860 
+b[(Intercept) site:Boathouse]       0.00 1.00 3105 
+b[(Intercept) site:Catwalk.Salmon]  0.00 1.00 4383 
+b[(Intercept) site:Catwalk.Willow]  0.00 1.00 3144 
+b[(Intercept) site:Grassy.Knoll]    0.00 1.00 4893 
+b[(Intercept) site:s741]            0.00 1.00 4308 
+b[(Intercept) site:s742]            0.00 1.00 3873 
+b[(Intercept) site:s743]            0.00 1.00 4759 
+b[(Intercept) site:s744]            0.00 1.00 4092 
+b[(Intercept) site:s746]            0.00 1.00 3859 
+b[(Intercept) site:s747]            0.00 1.00 4244 
+b[(Intercept) site:s748]            0.00 1.00 4871 
+b[(Intercept) site:s749]            0.00 1.00 4322 
+b[(Intercept) site:s750]            0.00 1.00 3287 
+b[(Intercept) site:s751]            0.00 1.00 5190 
+b[(Intercept) site:Salmon.Sequel]   0.00 1.00 4436 
+b[(Intercept) site:SW.Point]        0.00 1.00 3267 
+b[(Intercept) site:Willow.Gully]    0.00 1.00 4089 
+b[(Intercept) year:2010]            0.00 1.00 2019 
+b[(Intercept) year:2011]            0.00 1.00 3397 
+b[(Intercept) year:2012]            0.00 1.00 4451 
+b[(Intercept) year:2013]            0.00 1.00 3837 
+b[(Intercept) year:2014]            0.00 1.00 2747 
+b[(Intercept) year:2015]            0.00 1.00 3806 
+b[(Intercept) year:2016]            0.00 1.00 1598 
+b[(Intercept) year:2017]            0.00 1.00 2620 
+b[(Intercept) year:2018]            0.00 1.00 2764 
+Sigma[site:(Intercept),(Intercept)] 0.00 1.00 1459 
+Sigma[year:(Intercept),(Intercept)] 0.00 1.00 1300 
+mean_PPD                            0.00 1.00 2935 
+log-posterior                       0.20 1.00  777 
 
 For each parameter, mcse is Monte Carlo standard error, n_eff is a crude measure of effective sample size, and Rhat is the potential scale reduction factor on split chains (at convergence Rhat=1).
 ```
@@ -374,73 +404,73 @@ Model Info:
 
 Estimates:
                                       mean    sd      2.5%    50%     97.5%
-(Intercept)                            0.35    0.14    0.08    0.35    0.63
-islandPI                               0.32    0.17    0.00    0.32    0.64
-b[(Intercept) site:Boathouse]         -0.10    0.16   -0.43   -0.09    0.20
-b[(Intercept) site:Catwalk.Salmon]     0.12    0.18   -0.20    0.11    0.51
-b[(Intercept) site:Catwalk.Willow]    -0.14    0.17   -0.50   -0.13    0.17
-b[(Intercept) site:Grassy.Knoll]       0.00    0.18   -0.35    0.00    0.35
-b[(Intercept) site:s741]              -0.21    0.17   -0.58   -0.20    0.09
-b[(Intercept) site:s742]               0.10    0.17   -0.21    0.08    0.45
-b[(Intercept) site:s743]               0.11    0.17   -0.19    0.10    0.51
-b[(Intercept) site:s744]              -0.08    0.16   -0.43   -0.08    0.23
-b[(Intercept) site:s746]              -0.22    0.19   -0.62   -0.20    0.10
-b[(Intercept) site:s747]               0.12    0.17   -0.19    0.10    0.50
-b[(Intercept) site:s748]              -0.17    0.21   -0.63   -0.14    0.19
-b[(Intercept) site:s749]               0.14    0.18   -0.19    0.13    0.51
-b[(Intercept) site:s750]               0.19    0.18   -0.12    0.17    0.59
-b[(Intercept) site:s751]               0.05    0.18   -0.28    0.04    0.42
-b[(Intercept) site:Salmon.Sequel]     -0.04    0.17   -0.39   -0.03    0.30
-b[(Intercept) site:SW.Point]          -0.09    0.16   -0.43   -0.08    0.21
-b[(Intercept) site:Willow.Gully]       0.24    0.19   -0.08    0.23    0.67
-b[(Intercept) year:2010]               0.09    0.13   -0.12    0.06    0.39
-b[(Intercept) year:2011]               0.04    0.12   -0.19    0.02    0.30
-b[(Intercept) year:2012]              -0.02    0.11   -0.27   -0.01    0.19
-b[(Intercept) year:2013]              -0.04    0.12   -0.30   -0.02    0.18
-b[(Intercept) year:2014]              -0.08    0.12   -0.36   -0.06    0.11
-b[(Intercept) year:2015]              -0.03    0.11   -0.28   -0.02    0.18
-b[(Intercept) year:2016]               0.16    0.14   -0.04    0.14    0.50
-b[(Intercept) year:2017]              -0.08    0.12   -0.37   -0.06    0.12
-b[(Intercept) year:2018]              -0.05    0.11   -0.29   -0.03    0.17
-Sigma[site:(Intercept),(Intercept)]    0.06    0.05    0.00    0.05    0.18
-Sigma[year:(Intercept),(Intercept)]    0.03    0.04    0.00    0.02    0.12
-mean_PPD                               7.38    0.20    7.00    7.38    7.76
-log-posterior                       -314.40    5.96 -327.40 -314.02 -304.10
+(Intercept)                            0.35    0.13    0.08    0.35    0.62
+islandPI                               0.33    0.16    0.01    0.33    0.63
+b[(Intercept) site:Boathouse]         -0.10    0.16   -0.44   -0.10    0.19
+b[(Intercept) site:Catwalk.Salmon]     0.13    0.18   -0.21    0.11    0.53
+b[(Intercept) site:Catwalk.Willow]    -0.15    0.17   -0.53   -0.13    0.16
+b[(Intercept) site:Grassy.Knoll]       0.00    0.18   -0.35    0.00    0.36
+b[(Intercept) site:s741]              -0.22    0.18   -0.60   -0.21    0.08
+b[(Intercept) site:s742]               0.10    0.17   -0.20    0.08    0.46
+b[(Intercept) site:s743]               0.12    0.17   -0.21    0.11    0.48
+b[(Intercept) site:s744]              -0.09    0.16   -0.42   -0.08    0.22
+b[(Intercept) site:s746]              -0.23    0.19   -0.64   -0.21    0.09
+b[(Intercept) site:s747]               0.12    0.18   -0.20    0.11    0.50
+b[(Intercept) site:s748]              -0.17    0.20   -0.61   -0.15    0.17
+b[(Intercept) site:s749]               0.14    0.17   -0.16    0.13    0.51
+b[(Intercept) site:s750]               0.20    0.19   -0.12    0.18    0.63
+b[(Intercept) site:s751]               0.05    0.19   -0.32    0.04    0.44
+b[(Intercept) site:Salmon.Sequel]     -0.04    0.17   -0.38   -0.03    0.30
+b[(Intercept) site:SW.Point]          -0.09    0.16   -0.44   -0.09    0.22
+b[(Intercept) site:Willow.Gully]       0.25    0.19   -0.06    0.23    0.68
+b[(Intercept) year:2010]               0.10    0.12   -0.10    0.08    0.39
+b[(Intercept) year:2011]               0.04    0.12   -0.20    0.03    0.31
+b[(Intercept) year:2012]              -0.02    0.12   -0.29   -0.01    0.20
+b[(Intercept) year:2013]              -0.04    0.12   -0.31   -0.03    0.17
+b[(Intercept) year:2014]              -0.09    0.12   -0.37   -0.07    0.11
+b[(Intercept) year:2015]              -0.03    0.11   -0.28   -0.02    0.19
+b[(Intercept) year:2016]               0.17    0.15   -0.04    0.15    0.50
+b[(Intercept) year:2017]              -0.09    0.12   -0.36   -0.07    0.12
+b[(Intercept) year:2018]              -0.05    0.11   -0.30   -0.04    0.16
+Sigma[site:(Intercept),(Intercept)]    0.06    0.05    0.00    0.05    0.19
+Sigma[year:(Intercept),(Intercept)]    0.03    0.04    0.00    0.02    0.13
+mean_PPD                               7.38    0.20    6.99    7.39    7.76
+log-posterior                       -313.63    5.79 -326.20 -313.16 -303.44
 
 Diagnostics:
                                     mcse Rhat n_eff
-(Intercept)                         0.00 1.00 1535 
-islandPI                            0.00 1.00 1993 
-b[(Intercept) site:Boathouse]       0.00 1.00 2145 
-b[(Intercept) site:Catwalk.Salmon]  0.00 1.00 2366 
-b[(Intercept) site:Catwalk.Willow]  0.00 1.00 2286 
-b[(Intercept) site:Grassy.Knoll]    0.00 1.00 2954 
-b[(Intercept) site:s741]            0.00 1.00 1755 
-b[(Intercept) site:s742]            0.00 1.00 3073 
-b[(Intercept) site:s743]            0.00 1.00 2581 
-b[(Intercept) site:s744]            0.00 1.00 2653 
-b[(Intercept) site:s746]            0.00 1.00 1855 
-b[(Intercept) site:s747]            0.00 1.00 2367 
-b[(Intercept) site:s748]            0.00 1.00 2351 
-b[(Intercept) site:s749]            0.00 1.00 2510 
-b[(Intercept) site:s750]            0.00 1.00 1853 
-b[(Intercept) site:s751]            0.00 1.00 3177 
-b[(Intercept) site:Salmon.Sequel]   0.00 1.00 3017 
-b[(Intercept) site:SW.Point]        0.00 1.00 2315 
-b[(Intercept) site:Willow.Gully]    0.00 1.00 1719 
-b[(Intercept) year:2010]            0.00 1.00 2280 
-b[(Intercept) year:2011]            0.00 1.00 3203 
-b[(Intercept) year:2012]            0.00 1.00 2842 
-b[(Intercept) year:2013]            0.00 1.00 2839 
-b[(Intercept) year:2014]            0.00 1.00 1725 
-b[(Intercept) year:2015]            0.00 1.00 3083 
-b[(Intercept) year:2016]            0.00 1.00 1569 
-b[(Intercept) year:2017]            0.00 1.00 1901 
-b[(Intercept) year:2018]            0.00 1.00 2742 
-Sigma[site:(Intercept),(Intercept)] 0.00 1.00  925 
-Sigma[year:(Intercept),(Intercept)] 0.00 1.00 1013 
-mean_PPD                            0.00 1.00 3357 
-log-posterior                       0.25 1.01  548 
+(Intercept)                         0.00 1.00 1582 
+islandPI                            0.00 1.00 1793 
+b[(Intercept) site:Boathouse]       0.00 1.00 2059 
+b[(Intercept) site:Catwalk.Salmon]  0.00 1.00 3061 
+b[(Intercept) site:Catwalk.Willow]  0.00 1.00 2391 
+b[(Intercept) site:Grassy.Knoll]    0.00 1.00 3063 
+b[(Intercept) site:s741]            0.00 1.00 1881 
+b[(Intercept) site:s742]            0.00 1.00 3179 
+b[(Intercept) site:s743]            0.00 1.00 2738 
+b[(Intercept) site:s744]            0.00 1.00 2606 
+b[(Intercept) site:s746]            0.00 1.00 1931 
+b[(Intercept) site:s747]            0.00 1.00 2441 
+b[(Intercept) site:s748]            0.00 1.00 2934 
+b[(Intercept) site:s749]            0.00 1.00 3044 
+b[(Intercept) site:s750]            0.00 1.00 2248 
+b[(Intercept) site:s751]            0.00 1.00 3163 
+b[(Intercept) site:Salmon.Sequel]   0.00 1.00 3054 
+b[(Intercept) site:SW.Point]        0.00 1.00 2277 
+b[(Intercept) site:Willow.Gully]    0.00 1.00 2017 
+b[(Intercept) year:2010]            0.00 1.00 2230 
+b[(Intercept) year:2011]            0.00 1.00 3426 
+b[(Intercept) year:2012]            0.00 1.00 2905 
+b[(Intercept) year:2013]            0.00 1.00 2193 
+b[(Intercept) year:2014]            0.00 1.00 2299 
+b[(Intercept) year:2015]            0.00 1.00 2709 
+b[(Intercept) year:2016]            0.00 1.00 1642 
+b[(Intercept) year:2017]            0.00 1.00 2058 
+b[(Intercept) year:2018]            0.00 1.00 2567 
+Sigma[site:(Intercept),(Intercept)] 0.00 1.00 1125 
+Sigma[year:(Intercept),(Intercept)] 0.00 1.00 1088 
+mean_PPD                            0.00 1.00 3294 
+log-posterior                       0.23 1.00  621 
 
 For each parameter, mcse is Monte Carlo standard error, n_eff is a crude measure of effective sample size, and Rhat is the potential scale reduction factor on split chains (at convergence Rhat=1).
 ```
@@ -475,95 +505,95 @@ Model Info:
 
 Estimates:
                                       mean    sd      2.5%    50%     97.5%
-(Intercept)                            0.35    0.13    0.09    0.35    0.61
-islandPI                               0.33    0.18   -0.02    0.33    0.69
-b[(Intercept) site:Boathouse]         -0.10    0.15   -0.43   -0.09    0.18
-b[(Intercept) site:Catwalk.Salmon]     0.12    0.18   -0.19    0.11    0.51
-b[(Intercept) site:Catwalk.Willow]    -0.14    0.17   -0.50   -0.13    0.16
-b[(Intercept) site:Grassy.Knoll]      -0.01    0.18   -0.39    0.00    0.33
-b[(Intercept) site:s741]              -0.22    0.18   -0.62   -0.21    0.09
-b[(Intercept) site:s742]               0.09    0.17   -0.21    0.08    0.45
-b[(Intercept) site:s743]               0.11    0.17   -0.20    0.10    0.47
-b[(Intercept) site:s744]              -0.08    0.16   -0.43   -0.07    0.23
-b[(Intercept) site:s746]              -0.23    0.19   -0.62   -0.21    0.09
-b[(Intercept) site:s747]               0.12    0.18   -0.20    0.11    0.49
-b[(Intercept) site:s748]              -0.17    0.21   -0.64   -0.15    0.17
-b[(Intercept) site:s749]               0.13    0.17   -0.18    0.12    0.49
-b[(Intercept) site:s750]               0.19    0.18   -0.12    0.17    0.59
-b[(Intercept) site:s751]               0.04    0.18   -0.30    0.03    0.42
-b[(Intercept) site:Salmon.Sequel]     -0.04    0.18   -0.41   -0.03    0.29
-b[(Intercept) site:SW.Point]          -0.09    0.16   -0.43   -0.08    0.19
-b[(Intercept) site:Willow.Gully]       0.24    0.18   -0.06    0.23    0.63
-b[(Intercept) year:2010]               0.07    0.13   -0.14    0.05    0.36
-b[islandPI year:2010]                  0.05    0.18   -0.30    0.03    0.47
-b[(Intercept) year:2011]               0.03    0.12   -0.19    0.02    0.30
-b[islandPI year:2011]                  0.01    0.16   -0.36    0.01    0.37
-b[(Intercept) year:2012]              -0.03    0.11   -0.28   -0.02    0.19
-b[islandPI year:2012]                  0.03    0.16   -0.30    0.01    0.40
-b[(Intercept) year:2013]               0.01    0.13   -0.22    0.00    0.31
-b[islandPI year:2013]                 -0.14    0.20   -0.64   -0.09    0.14
-b[(Intercept) year:2014]              -0.10    0.15   -0.46   -0.07    0.10
-b[islandPI year:2014]                  0.08    0.19   -0.23    0.04    0.55
-b[(Intercept) year:2015]              -0.07    0.13   -0.37   -0.04    0.14
-b[islandPI year:2015]                  0.12    0.19   -0.17    0.08    0.61
-b[(Intercept) year:2016]               0.11    0.14   -0.11    0.09    0.43
-b[islandPI year:2016]                  0.13    0.19   -0.20    0.09    0.58
-b[(Intercept) year:2017]              -0.03    0.12   -0.28   -0.02    0.23
-b[islandPI year:2017]                 -0.16    0.20   -0.64   -0.12    0.12
-b[(Intercept) year:2018]               0.00    0.12   -0.24    0.00    0.26
-b[islandPI year:2018]                 -0.14    0.19   -0.59   -0.10    0.14
-Sigma[site:(Intercept),(Intercept)]    0.06    0.05    0.00    0.05    0.19
-Sigma[year:(Intercept),(Intercept)]    0.03    0.04    0.00    0.02    0.13
-Sigma[year:islandPI,(Intercept)]      -0.01    0.03   -0.09    0.00    0.03
-Sigma[year:islandPI,islandPI]          0.06    0.08    0.00    0.03    0.25
-mean_PPD                               7.38    0.19    6.99    7.38    7.75
-log-posterior                       -330.92    6.74 -344.97 -330.52 -318.70
+(Intercept)                            0.34    0.14    0.07    0.34    0.62
+islandPI                               0.34    0.18   -0.02    0.34    0.68
+b[(Intercept) site:Boathouse]         -0.10    0.15   -0.43   -0.09    0.19
+b[(Intercept) site:Catwalk.Salmon]     0.12    0.17   -0.18    0.11    0.49
+b[(Intercept) site:Catwalk.Willow]    -0.14    0.17   -0.52   -0.12    0.18
+b[(Intercept) site:Grassy.Knoll]       0.00    0.18   -0.35    0.00    0.36
+b[(Intercept) site:s741]              -0.22    0.18   -0.61   -0.21    0.09
+b[(Intercept) site:s742]               0.10    0.17   -0.21    0.08    0.47
+b[(Intercept) site:s743]               0.11    0.17   -0.22    0.10    0.49
+b[(Intercept) site:s744]              -0.08    0.16   -0.41   -0.07    0.23
+b[(Intercept) site:s746]              -0.22    0.19   -0.62   -0.20    0.08
+b[(Intercept) site:s747]               0.12    0.18   -0.20    0.10    0.51
+b[(Intercept) site:s748]              -0.16    0.19   -0.60   -0.14    0.18
+b[(Intercept) site:s749]               0.13    0.17   -0.18    0.11    0.49
+b[(Intercept) site:s750]               0.19    0.18   -0.11    0.17    0.60
+b[(Intercept) site:s751]               0.04    0.19   -0.32    0.03    0.43
+b[(Intercept) site:Salmon.Sequel]     -0.04    0.17   -0.42   -0.03    0.29
+b[(Intercept) site:SW.Point]          -0.09    0.16   -0.44   -0.08    0.19
+b[(Intercept) site:Willow.Gully]       0.25    0.18   -0.06    0.23    0.64
+b[(Intercept) year:2010]               0.07    0.13   -0.15    0.05    0.38
+b[islandPI year:2010]                  0.06    0.18   -0.31    0.04    0.45
+b[(Intercept) year:2011]               0.04    0.13   -0.21    0.02    0.33
+b[islandPI year:2011]                  0.01    0.18   -0.37    0.00    0.40
+b[(Intercept) year:2012]              -0.03    0.12   -0.30   -0.01    0.20
+b[islandPI year:2012]                  0.03    0.17   -0.31    0.01    0.43
+b[(Intercept) year:2013]               0.01    0.13   -0.22    0.00    0.32
+b[islandPI year:2013]                 -0.14    0.20   -0.64   -0.09    0.15
+b[(Intercept) year:2014]              -0.10    0.14   -0.45   -0.07    0.10
+b[islandPI year:2014]                  0.09    0.19   -0.23    0.05    0.55
+b[(Intercept) year:2015]              -0.06    0.13   -0.37   -0.04    0.15
+b[islandPI year:2015]                  0.13    0.20   -0.16    0.08    0.62
+b[(Intercept) year:2016]               0.12    0.14   -0.10    0.09    0.45
+b[islandPI year:2016]                  0.13    0.20   -0.21    0.09    0.59
+b[(Intercept) year:2017]              -0.02    0.13   -0.29   -0.02    0.25
+b[islandPI year:2017]                 -0.17    0.20   -0.67   -0.13    0.11
+b[(Intercept) year:2018]               0.00    0.12   -0.24    0.00    0.28
+b[islandPI year:2018]                 -0.14    0.19   -0.61   -0.10    0.13
+Sigma[site:(Intercept),(Intercept)]    0.06    0.05    0.00    0.05    0.18
+Sigma[year:(Intercept),(Intercept)]    0.03    0.04    0.00    0.02    0.14
+Sigma[year:islandPI,(Intercept)]      -0.01    0.03   -0.10    0.00    0.03
+Sigma[year:islandPI,islandPI]          0.06    0.08    0.00    0.03    0.28
+mean_PPD                               7.37    0.20    6.96    7.37    7.77
+log-posterior                       -330.96    6.55 -344.63 -330.64 -318.95
 
 Diagnostics:
                                     mcse Rhat n_eff
-(Intercept)                         0.00 1.00 2421 
-islandPI                            0.00 1.00 2213 
-b[(Intercept) site:Boathouse]       0.00 1.00 3250 
-b[(Intercept) site:Catwalk.Salmon]  0.00 1.00 3202 
-b[(Intercept) site:Catwalk.Willow]  0.00 1.00 3440 
-b[(Intercept) site:Grassy.Knoll]    0.00 1.00 4622 
-b[(Intercept) site:s741]            0.00 1.00 2301 
-b[(Intercept) site:s742]            0.00 1.00 3250 
-b[(Intercept) site:s743]            0.00 1.00 3821 
-b[(Intercept) site:s744]            0.00 1.00 3432 
-b[(Intercept) site:s746]            0.00 1.00 2250 
-b[(Intercept) site:s747]            0.00 1.00 3678 
-b[(Intercept) site:s748]            0.00 1.00 2889 
-b[(Intercept) site:s749]            0.00 1.00 3344 
-b[(Intercept) site:s750]            0.00 1.00 2619 
-b[(Intercept) site:s751]            0.00 1.00 6069 
-b[(Intercept) site:Salmon.Sequel]   0.00 1.00 3827 
-b[(Intercept) site:SW.Point]        0.00 1.00 3183 
-b[(Intercept) site:Willow.Gully]    0.00 1.00 1797 
-b[(Intercept) year:2010]            0.00 1.00 3111 
-b[islandPI year:2010]               0.00 1.00 3270 
-b[(Intercept) year:2011]            0.00 1.00 3620 
-b[islandPI year:2011]               0.00 1.00 3282 
-b[(Intercept) year:2012]            0.00 1.00 3468 
-b[islandPI year:2012]               0.00 1.00 3497 
-b[(Intercept) year:2013]            0.00 1.00 3145 
-b[islandPI year:2013]               0.00 1.00 1850 
-b[(Intercept) year:2014]            0.00 1.00 2121 
-b[islandPI year:2014]               0.00 1.00 2302 
-b[(Intercept) year:2015]            0.00 1.00 2624 
-b[islandPI year:2015]               0.00 1.00 2009 
-b[(Intercept) year:2016]            0.00 1.00 2257 
-b[islandPI year:2016]               0.00 1.00 2546 
-b[(Intercept) year:2017]            0.00 1.00 2585 
-b[islandPI year:2017]               0.00 1.00 1726 
-b[(Intercept) year:2018]            0.00 1.00 2924 
-b[islandPI year:2018]               0.00 1.00 1977 
-Sigma[site:(Intercept),(Intercept)] 0.00 1.00 1162 
-Sigma[year:(Intercept),(Intercept)] 0.00 1.00 1424 
-Sigma[year:islandPI,(Intercept)]    0.00 1.00 1865 
-Sigma[year:islandPI,islandPI]       0.00 1.00 1313 
-mean_PPD                            0.00 1.00 3110 
-log-posterior                       0.27 1.00  639 
+(Intercept)                         0.00 1.00 1844 
+islandPI                            0.00 1.00 2148 
+b[(Intercept) site:Boathouse]       0.00 1.00 2661 
+b[(Intercept) site:Catwalk.Salmon]  0.00 1.00 2870 
+b[(Intercept) site:Catwalk.Willow]  0.00 1.00 2520 
+b[(Intercept) site:Grassy.Knoll]    0.00 1.00 4430 
+b[(Intercept) site:s741]            0.00 1.00 2648 
+b[(Intercept) site:s742]            0.00 1.00 4153 
+b[(Intercept) site:s743]            0.00 1.00 3711 
+b[(Intercept) site:s744]            0.00 1.00 4191 
+b[(Intercept) site:s746]            0.00 1.00 2342 
+b[(Intercept) site:s747]            0.00 1.00 3296 
+b[(Intercept) site:s748]            0.00 1.00 3291 
+b[(Intercept) site:s749]            0.00 1.00 3899 
+b[(Intercept) site:s750]            0.00 1.00 2770 
+b[(Intercept) site:s751]            0.00 1.00 5149 
+b[(Intercept) site:Salmon.Sequel]   0.00 1.00 3534 
+b[(Intercept) site:SW.Point]        0.00 1.00 2445 
+b[(Intercept) site:Willow.Gully]    0.00 1.00 1749 
+b[(Intercept) year:2010]            0.00 1.00 2537 
+b[islandPI year:2010]               0.00 1.00 3098 
+b[(Intercept) year:2011]            0.00 1.00 2850 
+b[islandPI year:2011]               0.00 1.00 2938 
+b[(Intercept) year:2012]            0.00 1.00 3767 
+b[islandPI year:2012]               0.00 1.00 3694 
+b[(Intercept) year:2013]            0.00 1.00 2419 
+b[islandPI year:2013]               0.00 1.00 1792 
+b[(Intercept) year:2014]            0.00 1.00 2251 
+b[islandPI year:2014]               0.00 1.00 2355 
+b[(Intercept) year:2015]            0.00 1.00 2377 
+b[islandPI year:2015]               0.00 1.00 2038 
+b[(Intercept) year:2016]            0.00 1.00 2049 
+b[islandPI year:2016]               0.00 1.00 2240 
+b[(Intercept) year:2017]            0.00 1.00 2436 
+b[islandPI year:2017]               0.00 1.00 1774 
+b[(Intercept) year:2018]            0.00 1.00 2112 
+b[islandPI year:2018]               0.00 1.00 1755 
+Sigma[site:(Intercept),(Intercept)] 0.00 1.00 1168 
+Sigma[year:(Intercept),(Intercept)] 0.00 1.00 1100 
+Sigma[year:islandPI,(Intercept)]    0.00 1.00 1756 
+Sigma[year:islandPI,islandPI]       0.00 1.00 1309 
+mean_PPD                            0.00 1.00 3287 
+log-posterior                       0.25 1.00  678 
 
 For each parameter, mcse is Monte Carlo standard error, n_eff is a crude measure of effective sample size, and Rhat is the potential scale reduction factor on split chains (at convergence Rhat=1).
 ```
@@ -599,99 +629,99 @@ Model Info:
 
 Estimates:
                                       mean    sd      2.5%    50%     97.5%
-(Intercept)                            0.34    0.14    0.07    0.34    0.61
-islandPI                               0.33    0.18   -0.02    0.33    0.69
-PC1                                   -0.03    0.08   -0.19   -0.04    0.14
-PC2                                   -0.10    0.15   -0.39   -0.09    0.17
-b[(Intercept) site:Boathouse]         -0.10    0.16   -0.43   -0.09    0.18
-b[(Intercept) site:Catwalk.Salmon]     0.12    0.17   -0.19    0.11    0.50
-b[(Intercept) site:Catwalk.Willow]    -0.14    0.17   -0.52   -0.13    0.16
-b[(Intercept) site:Grassy.Knoll]      -0.01    0.18   -0.37   -0.01    0.36
-b[(Intercept) site:s741]              -0.22    0.18   -0.61   -0.20    0.09
-b[(Intercept) site:s742]               0.09    0.17   -0.23    0.08    0.45
-b[(Intercept) site:s743]               0.11    0.17   -0.21    0.10    0.47
-b[(Intercept) site:s744]              -0.08    0.17   -0.44   -0.07    0.23
-b[(Intercept) site:s746]              -0.23    0.19   -0.65   -0.21    0.08
-b[(Intercept) site:s747]               0.12    0.17   -0.19    0.10    0.48
-b[(Intercept) site:s748]              -0.16    0.21   -0.62   -0.14    0.20
-b[(Intercept) site:s749]               0.14    0.18   -0.19    0.12    0.52
-b[(Intercept) site:s750]               0.19    0.18   -0.12    0.17    0.60
-b[(Intercept) site:s751]               0.04    0.18   -0.31    0.03    0.43
-b[(Intercept) site:Salmon.Sequel]     -0.04    0.17   -0.38   -0.03    0.30
-b[(Intercept) site:SW.Point]          -0.09    0.15   -0.41   -0.08    0.19
-b[(Intercept) site:Willow.Gully]       0.24    0.19   -0.07    0.23    0.63
-b[(Intercept) year:2010]               0.07    0.14   -0.20    0.04    0.38
-b[islandPI year:2010]                  0.05    0.18   -0.31    0.03    0.45
-b[(Intercept) year:2011]               0.06    0.16   -0.23    0.03    0.45
-b[islandPI year:2011]                  0.01    0.19   -0.40    0.01    0.41
-b[(Intercept) year:2012]              -0.01    0.15   -0.35    0.00    0.30
-b[islandPI year:2012]                  0.04    0.18   -0.32    0.02    0.43
-b[(Intercept) year:2013]               0.03    0.15   -0.23    0.02    0.40
-b[islandPI year:2013]                 -0.13    0.20   -0.65   -0.09    0.19
-b[(Intercept) year:2014]              -0.12    0.16   -0.50   -0.08    0.12
-b[islandPI year:2014]                  0.09    0.20   -0.26    0.05    0.58
-b[(Intercept) year:2015]              -0.04    0.20   -0.49   -0.02    0.32
-b[islandPI year:2015]                  0.16    0.22   -0.16    0.11    0.67
-b[(Intercept) year:2016]               0.11    0.16   -0.17    0.08    0.48
-b[islandPI year:2016]                  0.14    0.20   -0.21    0.10    0.62
-b[(Intercept) year:2017]              -0.09    0.18   -0.51   -0.06    0.23
-b[islandPI year:2017]                 -0.22    0.22   -0.74   -0.18    0.12
-b[(Intercept) year:2018]              -0.01    0.13   -0.27   -0.01    0.29
-b[islandPI year:2018]                 -0.16    0.21   -0.65   -0.12    0.14
-Sigma[site:(Intercept),(Intercept)]    0.06    0.05    0.00    0.05    0.18
-Sigma[year:(Intercept),(Intercept)]    0.04    0.07    0.00    0.02    0.18
-Sigma[year:islandPI,(Intercept)]      -0.01    0.04   -0.10    0.00    0.05
-Sigma[year:islandPI,islandPI]          0.07    0.09    0.00    0.04    0.30
-mean_PPD                               7.38    0.20    6.99    7.39    7.77
-log-posterior                       -332.58    6.76 -346.85 -332.41 -320.46
+(Intercept)                            0.34    0.14    0.07    0.34    0.62
+islandPI                               0.34    0.18   -0.03    0.34    0.70
+PC1                                   -0.04    0.09   -0.21   -0.04    0.14
+PC2                                   -0.09    0.15   -0.40   -0.09    0.20
+b[(Intercept) site:Boathouse]         -0.10    0.16   -0.44   -0.09    0.20
+b[(Intercept) site:Catwalk.Salmon]     0.13    0.17   -0.19    0.12    0.50
+b[(Intercept) site:Catwalk.Willow]    -0.15    0.17   -0.52   -0.13    0.16
+b[(Intercept) site:Grassy.Knoll]       0.00    0.18   -0.38    0.00    0.36
+b[(Intercept) site:s741]              -0.23    0.18   -0.63   -0.21    0.08
+b[(Intercept) site:s742]               0.09    0.17   -0.23    0.08    0.48
+b[(Intercept) site:s743]               0.11    0.18   -0.21    0.10    0.50
+b[(Intercept) site:s744]              -0.09    0.16   -0.43   -0.08    0.22
+b[(Intercept) site:s746]              -0.23    0.19   -0.63   -0.22    0.09
+b[(Intercept) site:s747]               0.12    0.18   -0.22    0.10    0.50
+b[(Intercept) site:s748]              -0.17    0.20   -0.64   -0.15    0.18
+b[(Intercept) site:s749]               0.14    0.17   -0.17    0.13    0.52
+b[(Intercept) site:s750]               0.20    0.19   -0.14    0.18    0.59
+b[(Intercept) site:s751]               0.04    0.19   -0.35    0.03    0.42
+b[(Intercept) site:Salmon.Sequel]     -0.04    0.17   -0.40   -0.03    0.31
+b[(Intercept) site:SW.Point]          -0.09    0.16   -0.41   -0.08    0.20
+b[(Intercept) site:Willow.Gully]       0.26    0.19   -0.07    0.24    0.66
+b[(Intercept) year:2010]               0.07    0.15   -0.17    0.05    0.42
+b[islandPI year:2010]                  0.05    0.18   -0.32    0.03    0.45
+b[(Intercept) year:2011]               0.06    0.17   -0.23    0.03    0.45
+b[islandPI year:2011]                  0.01    0.19   -0.39    0.01    0.40
+b[(Intercept) year:2012]              -0.01    0.15   -0.34    0.00    0.31
+b[islandPI year:2012]                  0.05    0.18   -0.31    0.03    0.44
+b[(Intercept) year:2013]               0.03    0.15   -0.24    0.01    0.39
+b[islandPI year:2013]                 -0.14    0.20   -0.65   -0.10    0.17
+b[(Intercept) year:2014]              -0.12    0.16   -0.53   -0.09    0.09
+b[islandPI year:2014]                  0.10    0.20   -0.26    0.06    0.57
+b[(Intercept) year:2015]              -0.06    0.20   -0.56   -0.03    0.28
+b[islandPI year:2015]                  0.17    0.22   -0.15    0.13    0.68
+b[(Intercept) year:2016]               0.10    0.18   -0.20    0.08    0.51
+b[islandPI year:2016]                  0.14    0.21   -0.23    0.11    0.60
+b[(Intercept) year:2017]              -0.08    0.18   -0.47   -0.05    0.27
+b[islandPI year:2017]                 -0.22    0.23   -0.73   -0.17    0.12
+b[(Intercept) year:2018]               0.00    0.13   -0.26   -0.01    0.27
+b[islandPI year:2018]                 -0.17    0.20   -0.64   -0.13    0.13
+Sigma[site:(Intercept),(Intercept)]    0.06    0.05    0.00    0.05    0.20
+Sigma[year:(Intercept),(Intercept)]    0.04    0.07    0.00    0.02    0.21
+Sigma[year:islandPI,(Intercept)]      -0.01    0.05   -0.14    0.00    0.05
+Sigma[year:islandPI,islandPI]          0.08    0.11    0.00    0.05    0.34
+mean_PPD                               7.38    0.20    7.00    7.39    7.76
+log-posterior                       -331.87    6.89 -346.71 -331.45 -319.35
 
 Diagnostics:
                                     mcse Rhat n_eff
-(Intercept)                         0.00 1.00 1891 
-islandPI                            0.00 1.00 2529 
-PC1                                 0.00 1.00 2435 
-PC2                                 0.00 1.00 1052 
-b[(Intercept) site:Boathouse]       0.00 1.00 2334 
-b[(Intercept) site:Catwalk.Salmon]  0.00 1.00 3067 
-b[(Intercept) site:Catwalk.Willow]  0.00 1.00 2850 
-b[(Intercept) site:Grassy.Knoll]    0.00 1.00 4558 
-b[(Intercept) site:s741]            0.00 1.00 2364 
-b[(Intercept) site:s742]            0.00 1.00 3910 
-b[(Intercept) site:s743]            0.00 1.00 3851 
-b[(Intercept) site:s744]            0.00 1.00 3830 
-b[(Intercept) site:s746]            0.00 1.00 2315 
-b[(Intercept) site:s747]            0.00 1.00 3787 
-b[(Intercept) site:s748]            0.00 1.00 3061 
-b[(Intercept) site:s749]            0.00 1.00 3213 
-b[(Intercept) site:s750]            0.00 1.00 2350 
-b[(Intercept) site:s751]            0.00 1.00 4666 
-b[(Intercept) site:Salmon.Sequel]   0.00 1.00 2934 
-b[(Intercept) site:SW.Point]        0.00 1.00 2444 
-b[(Intercept) site:Willow.Gully]    0.00 1.00 1841 
-b[(Intercept) year:2010]            0.00 1.00 2639 
-b[islandPI year:2010]               0.00 1.00 3428 
-b[(Intercept) year:2011]            0.00 1.00 2234 
-b[islandPI year:2011]               0.00 1.00 3703 
-b[(Intercept) year:2012]            0.00 1.00 2033 
-b[islandPI year:2012]               0.00 1.00 3127 
-b[(Intercept) year:2013]            0.00 1.00 1828 
-b[islandPI year:2013]               0.00 1.00 2155 
-b[(Intercept) year:2014]            0.00 1.00 2005 
-b[islandPI year:2014]               0.00 1.00 2213 
-b[(Intercept) year:2015]            0.01 1.00 1436 
-b[islandPI year:2015]               0.01 1.00 1886 
-b[(Intercept) year:2016]            0.00 1.00 2067 
-b[islandPI year:2016]               0.00 1.00 2927 
-b[(Intercept) year:2017]            0.00 1.00 1371 
-b[islandPI year:2017]               0.01 1.00 1419 
-b[(Intercept) year:2018]            0.00 1.00 2613 
-b[islandPI year:2018]               0.01 1.00 1645 
-Sigma[site:(Intercept),(Intercept)] 0.00 1.00 1198 
-Sigma[year:(Intercept),(Intercept)] 0.00 1.00  608 
-Sigma[year:islandPI,(Intercept)]    0.00 1.00 1433 
-Sigma[year:islandPI,islandPI]       0.00 1.00 1148 
-mean_PPD                            0.00 1.00 2922 
-log-posterior                       0.29 1.00  533 
+(Intercept)                         0.00 1.00 1692 
+islandPI                            0.00 1.00 1410 
+PC1                                 0.00 1.00 1348 
+PC2                                 0.00 1.00 1600 
+b[(Intercept) site:Boathouse]       0.00 1.00 2317 
+b[(Intercept) site:Catwalk.Salmon]  0.00 1.00 2543 
+b[(Intercept) site:Catwalk.Willow]  0.00 1.00 2567 
+b[(Intercept) site:Grassy.Knoll]    0.00 1.00 3300 
+b[(Intercept) site:s741]            0.00 1.00 2234 
+b[(Intercept) site:s742]            0.00 1.00 2828 
+b[(Intercept) site:s743]            0.00 1.00 2781 
+b[(Intercept) site:s744]            0.00 1.00 2540 
+b[(Intercept) site:s746]            0.00 1.00 2277 
+b[(Intercept) site:s747]            0.00 1.00 2721 
+b[(Intercept) site:s748]            0.00 1.00 2554 
+b[(Intercept) site:s749]            0.00 1.00 2163 
+b[(Intercept) site:s750]            0.00 1.00 2113 
+b[(Intercept) site:s751]            0.00 1.00 3914 
+b[(Intercept) site:Salmon.Sequel]   0.00 1.00 3052 
+b[(Intercept) site:SW.Point]        0.00 1.00 2566 
+b[(Intercept) site:Willow.Gully]    0.00 1.00 1705 
+b[(Intercept) year:2010]            0.00 1.00 2350 
+b[islandPI year:2010]               0.00 1.00 2476 
+b[(Intercept) year:2011]            0.00 1.00 1809 
+b[islandPI year:2011]               0.00 1.00 3186 
+b[(Intercept) year:2012]            0.00 1.00 2099 
+b[islandPI year:2012]               0.00 1.00 2469 
+b[(Intercept) year:2013]            0.00 1.00 2401 
+b[islandPI year:2013]               0.00 1.00 1797 
+b[(Intercept) year:2014]            0.00 1.00 1220 
+b[islandPI year:2014]               0.00 1.00 1827 
+b[(Intercept) year:2015]            0.01 1.00 1384 
+b[islandPI year:2015]               0.01 1.00 1613 
+b[(Intercept) year:2016]            0.00 1.00 1428 
+b[islandPI year:2016]               0.00 1.00 2004 
+b[(Intercept) year:2017]            0.00 1.00 1386 
+b[islandPI year:2017]               0.01 1.00 1488 
+b[(Intercept) year:2018]            0.00 1.00 2498 
+b[islandPI year:2018]               0.00 1.00 1757 
+Sigma[site:(Intercept),(Intercept)] 0.00 1.00 1021 
+Sigma[year:(Intercept),(Intercept)] 0.00 1.00  768 
+Sigma[year:islandPI,(Intercept)]    0.00 1.00 1223 
+Sigma[year:islandPI,islandPI]       0.00 1.00 1087 
+mean_PPD                            0.00 1.00 3240 
+log-posterior                       0.30 1.00  536 
 
 For each parameter, mcse is Monte Carlo standard error, n_eff is a crude measure of effective sample size, and Rhat is the potential scale reduction factor on split chains (at convergence Rhat=1).
 ```
@@ -726,57 +756,57 @@ Model Info:
 
 Estimates:
                                       mean    sd      2.5%    50%     97.5%
-(Intercept)                            0.33    0.12    0.09    0.33    0.55
-islandPI                               0.33    0.15    0.02    0.33    0.64
+(Intercept)                            0.33    0.12    0.09    0.33    0.58
+islandPI                               0.33    0.16    0.02    0.33    0.64
 PC1                                   -0.05    0.05   -0.15   -0.05    0.04
-PC2                                   -0.06    0.08   -0.23   -0.06    0.09
-b[(Intercept) site:Boathouse]         -0.09    0.15   -0.41   -0.07    0.19
-b[(Intercept) site:Catwalk.Salmon]     0.12    0.17   -0.19    0.11    0.51
-b[(Intercept) site:Catwalk.Willow]    -0.12    0.16   -0.47   -0.11    0.17
-b[(Intercept) site:Grassy.Knoll]      -0.01    0.16   -0.34    0.00    0.33
-b[(Intercept) site:s741]              -0.20    0.18   -0.58   -0.19    0.10
-b[(Intercept) site:s742]               0.09    0.16   -0.22    0.07    0.44
-b[(Intercept) site:s743]               0.11    0.16   -0.19    0.10    0.46
-b[(Intercept) site:s744]              -0.08    0.16   -0.42   -0.06    0.23
-b[(Intercept) site:s746]              -0.21    0.18   -0.60   -0.20    0.09
-b[(Intercept) site:s747]               0.11    0.16   -0.18    0.09    0.46
-b[(Intercept) site:s748]              -0.13    0.19   -0.57   -0.11    0.20
-b[(Intercept) site:s749]               0.12    0.17   -0.17    0.11    0.48
-b[(Intercept) site:s750]               0.18    0.18   -0.12    0.17    0.57
-b[(Intercept) site:s751]               0.02    0.18   -0.33    0.02    0.40
-b[(Intercept) site:Salmon.Sequel]     -0.03    0.17   -0.38   -0.03    0.29
-b[(Intercept) site:SW.Point]          -0.08    0.15   -0.39   -0.07    0.20
-b[(Intercept) site:Willow.Gully]       0.23    0.18   -0.06    0.22    0.64
-Sigma[site:(Intercept),(Intercept)]    0.05    0.04    0.00    0.04    0.17
-mean_PPD                               7.38    0.20    6.99    7.38    7.76
-log-posterior                       -303.21    4.94 -313.68 -302.79 -294.85
+PC2                                   -0.06    0.08   -0.22   -0.06    0.10
+b[(Intercept) site:Boathouse]         -0.09    0.16   -0.43   -0.08    0.21
+b[(Intercept) site:Catwalk.Salmon]     0.12    0.18   -0.20    0.11    0.53
+b[(Intercept) site:Catwalk.Willow]    -0.13    0.17   -0.48   -0.11    0.18
+b[(Intercept) site:Grassy.Knoll]      -0.01    0.18   -0.39   -0.01    0.38
+b[(Intercept) site:s741]              -0.21    0.18   -0.60   -0.19    0.08
+b[(Intercept) site:s742]               0.09    0.17   -0.21    0.07    0.44
+b[(Intercept) site:s743]               0.11    0.17   -0.20    0.09    0.47
+b[(Intercept) site:s744]              -0.08    0.16   -0.43   -0.07    0.21
+b[(Intercept) site:s746]              -0.22    0.19   -0.63   -0.20    0.09
+b[(Intercept) site:s747]               0.11    0.17   -0.20    0.09    0.48
+b[(Intercept) site:s748]              -0.14    0.19   -0.59   -0.11    0.19
+b[(Intercept) site:s749]               0.12    0.17   -0.17    0.11    0.49
+b[(Intercept) site:s750]               0.18    0.18   -0.12    0.16    0.57
+b[(Intercept) site:s751]               0.03    0.17   -0.33    0.02    0.38
+b[(Intercept) site:Salmon.Sequel]     -0.03    0.17   -0.38   -0.02    0.30
+b[(Intercept) site:SW.Point]          -0.08    0.16   -0.41   -0.07    0.21
+b[(Intercept) site:Willow.Gully]       0.24    0.19   -0.05    0.22    0.65
+Sigma[site:(Intercept),(Intercept)]    0.06    0.05    0.00    0.05    0.18
+mean_PPD                               7.39    0.20    6.99    7.39    7.78
+log-posterior                       -303.11    4.82 -313.65 -302.71 -294.75
 
 Diagnostics:
                                     mcse Rhat n_eff
-(Intercept)                         0.00 1.00 1978 
-islandPI                            0.00 1.00 1910 
-PC1                                 0.00 1.00 3632 
-PC2                                 0.00 1.00 3693 
-b[(Intercept) site:Boathouse]       0.00 1.00 2514 
-b[(Intercept) site:Catwalk.Salmon]  0.00 1.00 2595 
-b[(Intercept) site:Catwalk.Willow]  0.00 1.00 2325 
-b[(Intercept) site:Grassy.Knoll]    0.00 1.00 3815 
-b[(Intercept) site:s741]            0.00 1.00 1767 
-b[(Intercept) site:s742]            0.00 1.00 3045 
-b[(Intercept) site:s743]            0.00 1.00 2858 
-b[(Intercept) site:s744]            0.00 1.00 3334 
-b[(Intercept) site:s746]            0.00 1.00 1650 
-b[(Intercept) site:s747]            0.00 1.00 2751 
-b[(Intercept) site:s748]            0.00 1.00 2618 
-b[(Intercept) site:s749]            0.00 1.00 2484 
-b[(Intercept) site:s750]            0.00 1.00 2300 
-b[(Intercept) site:s751]            0.00 1.00 3293 
-b[(Intercept) site:Salmon.Sequel]   0.00 1.00 3175 
-b[(Intercept) site:SW.Point]        0.00 1.00 2613 
-b[(Intercept) site:Willow.Gully]    0.00 1.00 1396 
-Sigma[site:(Intercept),(Intercept)] 0.00 1.00  825 
-mean_PPD                            0.00 1.00 3600 
-log-posterior                       0.22 1.01  482 
+(Intercept)                         0.00 1.00 1505 
+islandPI                            0.00 1.00 1505 
+PC1                                 0.00 1.00 3724 
+PC2                                 0.00 1.00 4066 
+b[(Intercept) site:Boathouse]       0.00 1.00 1948 
+b[(Intercept) site:Catwalk.Salmon]  0.00 1.00 2207 
+b[(Intercept) site:Catwalk.Willow]  0.00 1.00 1757 
+b[(Intercept) site:Grassy.Knoll]    0.00 1.00 3539 
+b[(Intercept) site:s741]            0.00 1.00 1590 
+b[(Intercept) site:s742]            0.00 1.00 2944 
+b[(Intercept) site:s743]            0.00 1.00 2840 
+b[(Intercept) site:s744]            0.00 1.00 2486 
+b[(Intercept) site:s746]            0.00 1.00 1475 
+b[(Intercept) site:s747]            0.00 1.00 3196 
+b[(Intercept) site:s748]            0.00 1.00 2609 
+b[(Intercept) site:s749]            0.00 1.00 2597 
+b[(Intercept) site:s750]            0.00 1.00 2197 
+b[(Intercept) site:s751]            0.00 1.00 3782 
+b[(Intercept) site:Salmon.Sequel]   0.00 1.00 2652 
+b[(Intercept) site:SW.Point]        0.00 1.00 2010 
+b[(Intercept) site:Willow.Gully]    0.00 1.00 1430 
+Sigma[site:(Intercept),(Intercept)] 0.00 1.00  867 
+mean_PPD                            0.00 1.00 3212 
+log-posterior                       0.21 1.00  552 
 
 For each parameter, mcse is Monte Carlo standard error, n_eff is a crude measure of effective sample size, and Rhat is the potential scale reduction factor on split chains (at convergence Rhat=1).
 ```
@@ -813,8 +843,8 @@ occ_loos
     
     Pareto k diagnostic values:
                              Count Pct.    Min. n_eff
-    (-Inf, 0.5]   (good)     138   99.3%   1133      
-     (0.5, 0.7]   (ok)         1    0.7%   958       
+    (-Inf, 0.5]   (good)     137   98.6%   1073      
+     (0.5, 0.7]   (ok)         2    1.4%   1284      
        (0.7, 1]   (bad)        0    0.0%   <NA>      
        (1, Inf)   (very bad)   0    0.0%   <NA>      
     
@@ -826,9 +856,9 @@ occ_loos
     Computed from 3000 by 139 log-likelihood matrix
     
              Estimate   SE
-    elpd_loo   -275.9  7.9
-    p_loo        15.0  1.6
-    looic       551.8 15.9
+    elpd_loo   -275.7  7.9
+    p_loo        15.3  1.6
+    looic       551.4 15.9
     ------
     Monte Carlo SE of elpd_loo is 0.1.
     
@@ -840,20 +870,13 @@ occ_loos
     Computed from 3000 by 139 log-likelihood matrix
     
              Estimate   SE
-    elpd_loo   -274.8  7.8
-    p_loo        17.0  1.8
-    looic       549.5 15.5
+    elpd_loo   -275.1  7.8
+    p_loo        17.4  1.8
+    looic       550.2 15.6
     ------
     Monte Carlo SE of elpd_loo is 0.1.
     
-    Pareto k diagnostic values:
-                             Count Pct.    Min. n_eff
-    (-Inf, 0.5]   (good)     136   97.8%   1072      
-     (0.5, 0.7]   (ok)         3    2.2%   423       
-       (0.7, 1]   (bad)        0    0.0%   <NA>      
-       (1, Inf)   (very bad)   0    0.0%   <NA>      
-    
-    All Pareto k estimates are ok (k < 0.7).
+    All Pareto k estimates are good (k < 0.5).
     See help('pareto-k-diagnostic') for details.
     
     $occ3
@@ -861,16 +884,16 @@ occ_loos
     Computed from 3000 by 139 log-likelihood matrix
     
              Estimate   SE
-    elpd_loo   -275.9  7.9
-    p_loo        19.0  2.0
-    looic       551.8 15.7
+    elpd_loo   -275.4  7.8
+    p_loo        18.8  1.9
+    looic       550.8 15.6
     ------
     Monte Carlo SE of elpd_loo is 0.1.
     
     Pareto k diagnostic values:
                              Count Pct.    Min. n_eff
-    (-Inf, 0.5]   (good)     135   97.1%   968       
-     (0.5, 0.7]   (ok)         4    2.9%   357       
+    (-Inf, 0.5]   (good)     137   98.6%   461       
+     (0.5, 0.7]   (ok)         2    1.4%   1683      
        (0.7, 1]   (bad)        0    0.0%   <NA>      
        (1, Inf)   (very bad)   0    0.0%   <NA>      
     
@@ -882,20 +905,13 @@ occ_loos
     Computed from 3000 by 139 log-likelihood matrix
     
              Estimate   SE
-    elpd_loo   -277.8  8.1
-    p_loo        13.0  1.4
-    looic       555.6 16.2
+    elpd_loo   -277.7  8.1
+    p_loo        13.1  1.4
+    looic       555.5 16.1
     ------
     Monte Carlo SE of elpd_loo is 0.1.
     
-    Pareto k diagnostic values:
-                             Count Pct.    Min. n_eff
-    (-Inf, 0.5]   (good)     138   99.3%   1054      
-     (0.5, 0.7]   (ok)         1    0.7%   732       
-       (0.7, 1]   (bad)        0    0.0%   <NA>      
-       (1, Inf)   (very bad)   0    0.0%   <NA>      
-    
-    All Pareto k estimates are ok (k < 0.7).
+    All Pareto k estimates are good (k < 0.5).
     See help('pareto-k-diagnostic') for details.
 
 ``` r
@@ -904,32 +920,32 @@ print(occ_compare, simplify = FALSE)
 
 ``` 
      elpd_diff se_diff elpd_loo se_elpd_loo p_loo  se_p_loo looic  se_looic
-occ2    0.0       0.0  -274.8      7.8        17.0    1.8    549.5   15.5  
-occ0   -0.9       2.1  -275.7      8.0        15.9    1.7    551.4   16.0  
-occ1   -1.1       1.3  -275.9      7.9        15.0    1.6    551.8   15.9  
-occ3   -1.2       0.8  -275.9      7.9        19.0    2.0    551.8   15.7  
-occ4   -3.1       2.2  -277.8      8.1        13.0    1.4    555.6   16.2  
+occ2    0.0       0.0  -275.1      7.8        17.4    1.8    550.2   15.6  
+occ3   -0.3       0.8  -275.4      7.8        18.8    1.9    550.8   15.6  
+occ0   -0.6       2.2  -275.7      8.0        15.9    1.7    551.4   16.0  
+occ1   -0.6       1.3  -275.7      7.9        15.3    1.6    551.4   15.9  
+occ4   -2.7       2.2  -277.7      8.1        13.1    1.4    555.5   16.1  
 ```
 
 ``` r
 occ_compair
 ```
 
-    $`occ0 vs. occ2`
+    $`occ3 vs. occ2`
     looic_diff         se 
-           1.9        4.3 
+           0.6        1.5 
+    
+    $`occ0 vs. occ3`
+    looic_diff         se 
+           0.6        4.7 
     
     $`occ1 vs. occ0`
     looic_diff         se 
-           0.4        3.3 
+           0.0        3.1 
     
-    $`occ3 vs. occ1`
+    $`occ4 vs. occ1`
     looic_diff         se 
-           0.1        3.3 
-    
-    $`occ4 vs. occ3`
-    looic_diff         se 
-           3.8        4.9 
+           4.0        3.7 
 
 If we have refit the models, we cache the results to save time…
 
