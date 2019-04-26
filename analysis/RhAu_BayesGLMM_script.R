@@ -126,28 +126,28 @@ env_data <- Reduce(inner_join, list(select(pdo, c(year, pdo_index)),
                                     select(chla_PI, c(year, chla_PI_spring)),
                                     select(biol_trans, c(year, st_onset, st_duration))))
 
-# Time-series plots of indicators
-pdo.gg <- ggplot(data = env_data, aes(x=year, y=pdo_index))+geom_line()+
-    labs(x="Year", y = "PDO", size = 5)+theme_gray()
-mei.gg <- ggplot(data = env_data, aes(x=year, y=mei_avg))+geom_line()+
-    labs(x="Year", y = "MEI")+theme_gray()
-sstdi.gg <- ggplot(data = env_data, aes(x=year, y=sst_DI_spring))+geom_line()+
-    labs(x="Year", y = "SST (DI)")+theme_gray()
-sstpi.gg <- ggplot(data = env_data, aes(x=year, y=sst_PI_spring))+geom_line()+
-    labs(x="Year", y = "SST (PI)")+theme_gray()
-cui.gg <- ggplot(data = env_data, aes(x=year, y=cui_spring))+geom_line()+
-    labs(x="Year", y = "Coastal Upwelling")+theme_gray()
-sto.gg <- ggplot(data = env_data, aes(x=year, y=st_onset))+geom_line()+
-  labs(x="Year", y = "Spring Transition (d)")+theme_gray()
-chldi.gg <- ggplot(data = env_data, aes(x=year, y=chla_DI_spring))+geom_line()+
-    labs(x="Year", y = "Chl a (DI)")+theme_gray()
-chlpi.gg <- ggplot(data = env_data, aes(x=year, y=chla_PI_spring))+geom_line()+
-    labs(x="Year", y = "Chl a (PI)")+theme_gray()
-grid.arrange(pdo.gg, mei.gg, sstdi.gg, sstpi.gg, cui.gg, sto.gg, chldi.gg, chlpi.gg, nrow=4, ncol=2)
-
 #---------------------------------
 # PCA of Oceanographic Indicators
 #---------------------------------
+
+## Time-series plots of indicators
+pdo.gg <- ggplot(data = env_data, aes(x=year, y=pdo_index))+geom_line()+
+  labs(x="Year", y = "PDO", size = 5)+theme_gray()
+mei.gg <- ggplot(data = env_data, aes(x=year, y=mei_avg))+geom_line()+
+  labs(x="Year", y = "MEI")+theme_gray()
+sstdi.gg <- ggplot(data = env_data, aes(x=year, y=sst_DI_spring))+geom_line()+
+  labs(x="Year", y = "SST (DI)")+theme_gray()
+sstpi.gg <- ggplot(data = env_data, aes(x=year, y=sst_PI_spring))+geom_line()+
+  labs(x="Year", y = "SST (PI)")+theme_gray()
+cui.gg <- ggplot(data = env_data, aes(x=year, y=cui_spring))+geom_line()+
+  labs(x="Year", y = "Coastal Upwelling")+theme_gray()
+sto.gg <- ggplot(data = env_data, aes(x=year, y=st_onset))+geom_line()+
+  labs(x="Year", y = "Spring Transition (d)")+theme_gray()
+chldi.gg <- ggplot(data = env_data, aes(x=year, y=chla_DI_spring))+geom_line()+
+  labs(x="Year", y = "Chl a (DI)")+theme_gray()
+chlpi.gg <- ggplot(data = env_data, aes(x=year, y=chla_PI_spring))+geom_line()+
+  labs(x="Year", y = "Chl a (PI)")+theme_gray()
+grid.arrange(pdo.gg, mei.gg, sstdi.gg, sstpi.gg, cui.gg, sto.gg, chldi.gg, chlpi.gg, nrow=4, ncol=2)
 
 ## Correlation plot of indicators
 dat <- select(env_data, c(pdo_index, mei_avg, sst_DI_spring, sst_PI_spring, 
