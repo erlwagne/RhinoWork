@@ -203,7 +203,7 @@ grid.arrange(pdo.gg, mei.gg, sstdi.gg, sstpi.gg, cui.gg, sto.gg, chldi.gg, chlpi
              nrow = 5, ncol = 2)
 
 # base graphics
-dev.new(width = 10, height = 10)
+dev.new(width = 8, height = 10)
 par(mfrow = c(5,2), mar = c(2,5,1,1), oma = c(3,0,0,0))
 vars <- c("pdo_index","mei_avg","sst_DI_spring","sst_PI_spring","cui_spring","st_onset",
   "chla_DI_spring","chla_PI_spring","PC1","PC2")
@@ -219,28 +219,31 @@ for(i in 1:length(vars)) {
   lines(env_data$year, env_data[,vars[i]], type = "l", lwd = 2)
 }
 
-# # much nicer
-# dev.new(width = 7, height = 10)
-# par(mfrow = c(7,1), mar = c(1,5,1,1), oma = c(3,0,0,0))
-# vars <- c("pdo_index","mei_avg","sst_DI_spring","sst_PI_spring","cui_spring","st_onset",
-#           "chla_DI_spring","chla_PI_spring","PC1","PC2")
-# cols <- c("purple","orangered","darkred","salmon","darkblue","green","darkgreen","lightgreen",
-#           "black","darkgray")
-# ylabs <- c("PDO","MEI","SST", "SST", "CUI", "Transition", 
-#            bquote("Chl " * italic(a)), bquote("Chl " * italic(a)), "PC", "PC")
-# for(i in unique(ylabs)) {
-#   plot(env_data$year, env_data[,vars[grep(i,ylabs)[1]]], type = "l", lwd = 2,
-#        col = cols[grep(i,ylabs)[1]], las = 1, cex.axis = 1.2, cex.lab = 1.5, xlab = "", ylab = i,
-#        ylim = range(env_data[,vars[grep(i,ylabs)]], na.rm = TRUE), xaxt = "n", yaxt = "n", bty = "n")
-#   axis(side = 1, at = env_data$year, cex.axis = 1.2)
-#   axis(side = 2, at = axisTicks(par("usr")[3:4], log = FALSE, nint = 3), cex.axis = 1.2)
-#   rug(env_data$year[env_data$year %% 5 != 0], ticksize = -0.04)
-#   mtext(ifelse(par("mfg")[1] == 5, "Year", ""), side = 1, line = 3, cex = 1.5*par("cex"))
-#   if(sum(ylabs == i) == 2) {
-#     lines(env_data$year, env_data[,vars[grep(i,ylabs)[2]]], lwd = 2, col = cols[grep(i,ylabs)[2]])
-#     legend("topright", c("DI","PI"), lwd = 2, col = cols[grep(i,ylabs)])
-#   }
-# }
+# much nicer
+dev.new(width = 5, height = 10)
+par(mfrow = c(7,1), mar = c(1,5,1.2,4.5), oma = c(3,0,0,0))
+vars <- c("pdo_index","mei_avg","sst_DI_spring","sst_PI_spring","cui_spring","st_onset",
+          "chla_DI_spring","chla_PI_spring","PC1","PC2")
+cols <- c("purple","red","darkred","salmon","darkblue","SpringGreen","darkgreen","lightgreen",
+          "black","darkgray")
+mfgs <- c(1,2,3,3,4,5,6,6,7,7)
+ylabs <- c("PDO","MEI","SST", "CUI", "ST", bquote("Chl " * italic(a)), "PC")
+for(i in unique(mfgs)) {
+  plot(env_data$year, env_data[,vars[match(i,mfgs)]], type = "l", lwd = 2, col = cols[match(i,mfgs)], 
+       cex.axis = 1.2, cex.lab = 1.5, xlab = "", ylab = ylabs[i], 
+       ylim = range(env_data[,vars[which(mfgs == i)]], na.rm = TRUE), 
+       yaxt = "n", bty = "n")
+  axis(side = 1, at = env_data$year[env_data$year %% 5 != 0], labels = FALSE, cex.axis = 1.2)
+  ytck <- axisTicks(par("usr")[3:4], log = FALSE, nint = 3)
+  axis(side = 2, at = ytck, las = 1, cex.axis = 1.2,
+       labels = if(ylabs[[i]] == "ST") month(as_date(ytck), label = TRUE, abbr = TRUE) else ytck)
+  mtext(ifelse(par("mfg")[1] == 7, "Year", ""), side = 1, line = 3, cex = 1.5*par("cex"))
+  if(sum(mfgs == i) == 2) {
+    lines(env_data$year, env_data[,vars[which(mfgs==i)[2]]], lwd = 2, col = cols[which(mfgs==i)[2]])
+    legend("right", legend = if(ylabs[i] == "PC") 1:2 else c("DI","PI"), 
+           inset = c(-0.2,0), xpd = TRUE, lwd = 2, col = cols[which(mfgs == i)])
+  }
+}
 
 
 
