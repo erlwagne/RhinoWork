@@ -233,30 +233,32 @@ xloc <- barplot(pca_env$rotation[,"PC2"], xaxt = "n", main = "PC2 loadings")
 text(xloc, par("usr")[3], labels = dimnames(pca_env$rotation)[[1]], adj = c(1,1), srt = 45, 
      xpd = TRUE)
 ```
-```{r env_timeseries_plots, fig.height = 10, fig.width = 7, warning = FALSE}
+```{r env_timeseries_plots, fig.height = 8, fig.width = 4}
 ## Time-series plots of indicators and PCs
-pdo.gg <- ggplot(data = env_data, aes(x = year, y = pdo_index)) + geom_line() +
-  labs(x = "Year", y = "PDO", size = 5) + theme_gray()
-mei.gg <- ggplot(data = env_data, aes(x = year, y = mei_avg)) + geom_line()+
-  labs(x = "Year", y = "MEI") + theme_gray()
-sstdi.gg <- ggplot(data = env_data, aes(x = year, y = sst_DI_spring)) + geom_line() +
-  labs(x = "Year", y = "SST (DI)") + theme_gray()
-sstpi.gg <- ggplot(data = env_data, aes(x = year, y = sst_PI_spring)) + geom_line() +
-  labs(x = "Year", y = "SST (PI)") + theme_gray()
-cui.gg <- ggplot(data = env_data, aes(x = year, y = cui_spring)) + geom_line() +
-  labs(x = "Year", y = "Coastal Upwelling") + theme_gray()
-sto.gg <- ggplot(data = env_data, aes(x = year, y = st_onset)) + geom_line() +
-  labs(x = "Year", y = "Spring Transition (d)") + theme_gray()
-chldi.gg <- ggplot(data = env_data, aes(x = year, y = chla_DI_spring)) + geom_line() +
-  labs(x = "Year", y = "Chl a (DI)") + theme_gray()
-chlpi.gg <- ggplot(data = env_data, aes(x = year, y = chla_PI_spring)) + geom_line() +
-  labs(x = "Year", y = "Chl a (PI)") + theme_gray()
-pc1.gg <- ggplot(data = env_data, aes(x = year, y = PC1)) + geom_line() +
-  labs(x = "Year", y = "PC1") + theme_gray()
-pc2.gg <- ggplot(data = env_data, aes(x = year, y = PC2)) + geom_line() +
-  labs(x = "Year", y = "PC2") + theme_gray()
-grid.arrange(pdo.gg, mei.gg, sstdi.gg, sstpi.gg, cui.gg, sto.gg, chldi.gg, chlpi.gg, pc1.gg, pc2.gg,
-             nrow = 5, ncol = 2)
+par(mfrow = c(7,1), mar = c(1,5,1.2,4.5), oma = c(3,0,0,0))
+vars <- c("pdo_index","mei_avg","sst_DI_spring","sst_PI_spring","cui_spring","st_onset",
+          "chla_DI_spring","chla_PI_spring","PC1","PC2")
+cols <- c("purple","red","darkred","salmon","darkblue","SpringGreen","darkgreen","lightgreen",
+          "black","darkgray")
+mfgs <- c(1,2,3,3,4,5,6,6,7,7)
+ylabs <- c("PDO","MEI",bquote("SST (" * degree * "C)"), "CUI", "ST", 
+           bquote("Chl " * italic(a) * " (mg/m" ^3 * ")"), "PC")
+for(i in unique(mfgs)) {
+  plot(env_data$year, env_data[,vars[match(i,mfgs)]], type = "l", lwd = 2, col = cols[match(i,mfgs)], 
+       cex.axis = 1.2, cex.lab = 1.5, xlab = "", ylab = ylabs[i], 
+       ylim = range(env_data[,vars[which(mfgs == i)]], na.rm = TRUE), 
+       yaxt = "n", bty = "n")
+  axis(side = 1, at = env_data$year[env_data$year %% 5 != 0], labels = FALSE, cex.axis = 1.2)
+  ytck <- axisTicks(par("usr")[3:4], log = FALSE, nint = 3)
+  axis(side = 2, at = ytck, las = 1, cex.axis = 1.2,
+       labels = if(ylabs[[i]] == "ST") month(as_date(ytck), label = TRUE, abbr = TRUE) else ytck)
+  mtext(ifelse(par("mfg")[1] == 7, "Year", ""), side = 1, line = 3, cex = 1.5*par("cex"))
+  if(sum(mfgs == i) == 2) {
+    lines(env_data$year, env_data[,vars[which(mfgs==i)[2]]], lwd = 2, col = cols[which(mfgs==i)[2]])
+    legend("right", legend = if(ylabs[i] == "PC") 1:2 else c("DI","PI"), 
+           inset = c(-0.15,0), xpd = TRUE, lwd = 2, col = cols[which(mfgs == i)], bty = "n")
+  }
+}
 ```
 
 # GLMMs of Burrow Occupancy
