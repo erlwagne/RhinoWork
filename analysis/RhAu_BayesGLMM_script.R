@@ -177,29 +177,70 @@ env_data <- data.frame(env_data, PC1 = scale(scores[,"PC1"]), PC2 = scale(scores
 rhau <- left_join(nest_data, select(env_data, c(year, PC1, PC2)))
 
 ## Time-series plots of indicators and PCs
+## ggplot2
 dev.new(width = 7, height = 10)
 pdo.gg <- ggplot(data = env_data, aes(x = year, y = pdo_index)) + geom_line() +
-  labs(x = "Year", y = "PDO", size = 5) + theme_gray()
+  labs(x = "", y = "PDO", size = 5) + theme_gray()
 mei.gg <- ggplot(data = env_data, aes(x = year, y = mei_avg)) + geom_line()+
-  labs(x = "Year", y = "MEI") + theme_gray()
+  labs(x = "", y = "MEI") + theme_gray()
 sstdi.gg <- ggplot(data = env_data, aes(x = year, y = sst_DI_spring)) + geom_line() +
-  labs(x = "Year", y = "SST (DI)") + theme_gray()
+  labs(x = "", y = "SST (DI)") + theme_gray()
 sstpi.gg <- ggplot(data = env_data, aes(x = year, y = sst_PI_spring)) + geom_line() +
-  labs(x = "Year", y = "SST (PI)") + theme_gray()
+  labs(x = "", y = "SST (PI)") + theme_gray()
 cui.gg <- ggplot(data = env_data, aes(x = year, y = cui_spring)) + geom_line() +
-  labs(x = "Year", y = "Coastal Upwelling") + theme_gray()
+  labs(x = "", y = "Coastal Upwelling") + theme_gray()
 sto.gg <- ggplot(data = env_data, aes(x = year, y = st_onset)) + geom_line() +
-  labs(x = "Year", y = "Spring Transition (d)") + theme_gray()
+  labs(x = "", y = "Spring Transition (d)") + theme_gray()
 chldi.gg <- ggplot(data = env_data, aes(x = year, y = chla_DI_spring)) + geom_line() +
-  labs(x = "Year", y = "Chl a (DI)") + theme_gray()
+  labs(x = "", y = "Chl a (DI)") + theme_gray()
 chlpi.gg <- ggplot(data = env_data, aes(x = year, y = chla_PI_spring)) + geom_line() +
-  labs(x = "Year", y = "Chl a (PI)") + theme_gray()
+  labs(x = "", y = "Chl a (PI)") + theme_gray()
 pc1.gg <- ggplot(data = env_data, aes(x = year, y = PC1)) + geom_line() +
   labs(x = "Year", y = "PC1") + theme_gray()
 pc2.gg <- ggplot(data = env_data, aes(x = year, y = PC2)) + geom_line() +
   labs(x = "Year", y = "PC2") + theme_gray()
 grid.arrange(pdo.gg, mei.gg, sstdi.gg, sstpi.gg, cui.gg, sto.gg, chldi.gg, chlpi.gg, pc1.gg, pc2.gg,
              nrow = 5, ncol = 2)
+
+# base graphics
+dev.new(width = 10, height = 10)
+par(mfrow = c(5,2), mar = c(2,5,2,1), oma = c(3,0,0,0))
+vars <- c("pdo_index","mei_avg","sst_DI_spring","sst_PI_spring","cui_spring","st_onset",
+  "chla_DI_spring","chla_PI_spring","PC1","PC2")
+ylabs <- c("PDO","MEI","SST (DI)", "SST (PI)", "Coastal upwelling", "Spring transition (d)",
+           bquote("Chl " * italic(a) * " (DI)"), bquote("Chl " * italic(a) * " (PI)"), "PC1", "PC2")
+for(i in 1:length(vars)) {
+  plot(env_data$year, env_data[,vars[i]], pch = "", las = 1, cex.lab = 1.5, cex.axis = 1,
+       xlab = "", ylab = ylabs[i], xpd = NA)
+  mtext(ifelse(par("mfg")[1] == 5, "Year", ""), side = 1, line = 3, cex = 1.5*par("cex"))
+  grid(nx = NA, ny = NULL, col = "lightgray", lty = 1)
+  abline(v = env_data$year, col = "lightgray")
+  rug(env_data$year[env_data$year %% 5 != 0], ticksize = -0.04)
+  lines(env_data$year, env_data[,vars[i]], type = "l", lwd = 2)
+}
+
+# # much nicer
+# dev.new(width = 7, height = 10)
+# par(mfrow = c(7,1), mar = c(1,5,1,1), oma = c(3,0,0,0))
+# vars <- c("pdo_index","mei_avg","sst_DI_spring","sst_PI_spring","cui_spring","st_onset",
+#           "chla_DI_spring","chla_PI_spring","PC1","PC2")
+# cols <- c("purple","orangered","darkred","salmon","darkblue","green","darkgreen","lightgreen",
+#           "black","darkgray")
+# ylabs <- c("PDO","MEI","SST", "SST", "CUI", "ST", "Chl a", "Chl a", "PC", "PC")
+# for(i in unique(ylabs)) {
+#   plot(env_data$year, env_data[,vars[grep(i,ylabs)[1]]], type = "l", lwd = 2, 
+#        col = cols[grep(i,ylabs)[1]], las = 1, cex.axis = 1.2, cex.lab = 1.5, xlab = "", ylab = i,
+#        ylim = range(env_data[,vars[grep(i,ylabs)]], na.rm = TRUE), bty = "n")
+#   rug(env_data$year[env_data$year %% 5 != 0], ticksize = -0.04)
+#   mtext(ifelse(par("mfg")[1] == 5, "Year", ""), side = 1, line = 3, cex = 1.5*par("cex"))
+#   if(sum(ylabs == i) == 2) {
+#     lines(env_data$year, env_data[,vars[grep(i,ylabs)[2]]], lwd = 2, col = cols[grep(i,ylabs)[2]])
+#     legend("topright", c("DI","PI"), lwd = 2, col = cols[grep(i,ylabs)])  
+#   }
+# }
+
+
+
 
 #---------------------------------
 # GLMMs
