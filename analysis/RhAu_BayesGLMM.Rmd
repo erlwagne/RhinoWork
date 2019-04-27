@@ -35,7 +35,9 @@ options(width = 130)
 
 This is a Rhinoceros Auklet from the Protection Island colony:
 
-![](https://www.eopugetsound.org/sites/default/files/styles/magazinewidth_592px/public/topical_articles/images/16343412270_5cfaa5c480_o.jpg?itok=WjzI1_2K)
+```{r auklet_image, out.width = "50%", echo = FALSE}
+knitr::include_graphics("https://www.eopugetsound.org/sites/default/files/styles/magazinewidth_592px/public/topical_articles/images/16343412270_5cfaa5c480_o.jpg?itok=WjzI1_2K")
+```
 
 # Setup and data
 
@@ -193,16 +195,16 @@ env_data <- Reduce(inner_join, list(select(pdo, c(year, pdo_index)),
 
 Let's explore the patterns of (a)synchrony among the oceanographic indicators to see how severe the multicollinearity might be if they were used as raw regression inputs. 
 
-```{r env_corrplot, fig.height = 9, fig.width = 9}
+```{r env_corrplot, fig.align = "center", fig.height = 7, fig.width = 7, dpi = 200, out.width = "75%", echo = FALSE}
 dat <- select(env_data, c(pdo_index, mei_avg, sst_DI_spring, sst_PI_spring, 
-                          cui_spring, chla_DI_spring, chla_PI_spring, 
-                          st_onset, st_duration))
-corrplot(cor(dat, use = "pairwise"), method = "ellipse", diag = FALSE)
+                          cui_spring, st_onset, chla_DI_spring, chla_PI_spring))
+colnames(dat) <- c("PDO","MEI","SST (DI)","SST (PI)","CUI","ST","Chl a (DI)", "Chl a (PI)")
+corrplot(cor(dat, use = "pairwise"), method = "ellipse", diag = FALSE, tl.col = "black")
 ```
 
 Now we perform a principal components analysis to extract the major trends in the suite of oceanographic indicators for use as regression inputs.
 
-```{r PCA}
+```{r PCA, message = FALSE}
 pca_env <- prcomp(~ pdo_index + mei_avg + sst_DI_spring + sst_PI_spring + 
                     cui_spring + chla_DI_spring + chla_PI_spring + st_onset, 
                   data = env_data, scale = TRUE)
@@ -217,7 +219,7 @@ env_data <- data.frame(env_data, PC1 = scale(scores[,"PC1"]), PC2 = scale(scores
 ## Merge PC1 and PC2 into nest data
 rhau <- left_join(nest_data, select(env_data, c(year, PC1, PC2)))
 ```
-```{r PCA_plots, fig.height = 9, fig.width = 9}
+```{r PCA_plots, fig.align = "center", fig.height = 7, fig.width = 7, dpi = 300, out.width = "75%", echo = FALSE}
 par(mfcol = c(2,2))
 # scree plot
 imp <- summary(pca_env)$importance["Proportion of Variance",]
@@ -233,7 +235,7 @@ xloc <- barplot(pca_env$rotation[,"PC2"], xaxt = "n", main = "PC2 loadings")
 text(xloc, par("usr")[3], labels = dimnames(pca_env$rotation)[[1]], adj = c(1,1), srt = 45, 
      xpd = TRUE)
 ```
-```{r env_timeseries_plots, fig.height = 8, fig.width = 4}
+```{r env_timeseries_plots, fig.align = "center", fig.height = 10, fig.width = 5, dpi = 300, out.width = "50%", echo = FALSE}
 ## Time-series plots of indicators and PCs
 par(mfrow = c(7,1), mar = c(1,5,1.2,4.5), oma = c(3,0,0,0))
 vars <- c("pdo_index","mei_avg","sst_DI_spring","sst_PI_spring","cui_spring","st_onset",

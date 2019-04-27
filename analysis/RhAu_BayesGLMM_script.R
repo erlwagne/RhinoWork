@@ -132,17 +132,15 @@ env_data <- Reduce(inner_join, list(select(pdo, c(year, pdo_index)),
 
 ## Correlation plot of indicators
 dat <- select(env_data, c(pdo_index, mei_avg, sst_DI_spring, sst_PI_spring, 
-                          cui_spring, chla_DI_spring, chla_PI_spring, 
-                          st_onset, st_duration))
-# colnames(dat) <- c("SST spring (DI)", "SST spring (PI)", "MEI", "Coastal Upwelling (Spring)", 
-#                    "Spring Transition (Onset)", "PDO Index")
+                          cui_spring, st_onset, chla_DI_spring, chla_PI_spring))
+colnames(dat) <- c("PDO","MEI","SST (DI)","SST (PI)","CUI","ST","Chl a (DI)", "Chl a (PI)")
 dev.new()
 corrplot(cor(dat, use = "pairwise"), method = "ellipse", diag = FALSE)
 
 ## Pairs plot of indicators
 dev.new(width = 12, height = 12)
 pairs(select(env_data, c(pdo_index, mei_avg, sst_DI_spring, sst_PI_spring, 
-                         cui_spring, chla_DI_spring, chla_PI_spring, st_onset, st_duration)), 
+                         cui_spring, st_onset, chla_DI_spring, chla_PI_spring)), 
       gap = 0.2, pch = 16, cex = 1.2, col = transparent("slategray",0.6))
 
 # PCA

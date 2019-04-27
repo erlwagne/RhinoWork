@@ -15,7 +15,7 @@ April 21, 2019
 This is a Rhinoceros Auklet from the Protection Island
 colony:
 
-![](https://www.eopugetsound.org/sites/default/files/styles/magazinewidth_592px/public/topical_articles/images/16343412270_5cfaa5c480_o.jpg?itok=WjzI1_2K)
+<img src="https://www.eopugetsound.org/sites/default/files/styles/magazinewidth_592px/public/topical_articles/images/16343412270_5cfaa5c480_o.jpg?itok=WjzI1_2K" width="50%" />
 
 # Setup and data
 
@@ -166,14 +166,7 @@ indicators to see how severe the multicollinearity might be if they were
 used as raw regression
 inputs.
 
-``` r
-dat <- select(env_data, c(pdo_index, mei_avg, sst_DI_spring, sst_PI_spring, 
-                          cui_spring, chla_DI_spring, chla_PI_spring, 
-                          st_onset, st_duration))
-corrplot(cor(dat, use = "pairwise"), method = "ellipse", diag = FALSE)
-```
-
-![](RhAu_BayesGLMM_files/figure-gfm/env_corrplot-1.png)<!-- -->
+<img src="RhAu_BayesGLMM_files/figure-gfm/env_corrplot-1.png" width="75%" style="display: block; margin: auto;" />
 
 Now we perform a principal components analysis to extract the major
 trends in the suite of oceanographic indicators for use as regression
@@ -220,56 +213,8 @@ env_data <- data.frame(env_data, PC1 = scale(scores[,"PC1"]), PC2 = scale(scores
 rhau <- left_join(nest_data, select(env_data, c(year, PC1, PC2)))
 ```
 
-    Joining, by = "year"
-
-``` r
-par(mfcol = c(2,2))
-# scree plot
-imp <- summary(pca_env)$importance["Proportion of Variance",]
-barplot(imp, xlab = "", ylab = "Proportion of variance", names.arg = names(imp))   
-# biplot of PCAs and oceanographic indicators
-biplot(pca_env) 
-# PC1 loadings
-xloc <- barplot(pca_env$rotation[,"PC1"], xaxt = "n", main = "PC1 loadings")
-text(xloc, par("usr")[3], labels = dimnames(pca_env$rotation)[[1]], adj = c(1,1), srt = 45, 
-     xpd = TRUE)
-# PC2 loadings
-xloc <- barplot(pca_env$rotation[,"PC2"], xaxt = "n", main = "PC2 loadings")
-text(xloc, par("usr")[3], labels = dimnames(pca_env$rotation)[[1]], adj = c(1,1), srt = 45, 
-     xpd = TRUE)
-```
-
-![](RhAu_BayesGLMM_files/figure-gfm/PCA_plots-1.png)<!-- -->
-
-``` r
-## Time-series plots of indicators and PCs
-par(mfrow = c(7,1), mar = c(1,5,1.2,4.5), oma = c(3,0,0,0))
-vars <- c("pdo_index","mei_avg","sst_DI_spring","sst_PI_spring","cui_spring","st_onset",
-          "chla_DI_spring","chla_PI_spring","PC1","PC2")
-cols <- c("purple","red","darkred","salmon","darkblue","SpringGreen","darkgreen","lightgreen",
-          "black","darkgray")
-mfgs <- c(1,2,3,3,4,5,6,6,7,7)
-ylabs <- c("PDO","MEI",bquote("SST (" * degree * "C)"), "CUI", "ST", 
-           bquote("Chl " * italic(a) * " (mg/m" ^3 * ")"), "PC")
-for(i in unique(mfgs)) {
-  plot(env_data$year, env_data[,vars[match(i,mfgs)]], type = "l", lwd = 2, col = cols[match(i,mfgs)], 
-       cex.axis = 1.2, cex.lab = 1.5, xlab = "", ylab = ylabs[i], 
-       ylim = range(env_data[,vars[which(mfgs == i)]], na.rm = TRUE), 
-       yaxt = "n", bty = "n")
-  axis(side = 1, at = env_data$year[env_data$year %% 5 != 0], labels = FALSE, cex.axis = 1.2)
-  ytck <- axisTicks(par("usr")[3:4], log = FALSE, nint = 3)
-  axis(side = 2, at = ytck, las = 1, cex.axis = 1.2,
-       labels = if(ylabs[[i]] == "ST") month(as_date(ytck), label = TRUE, abbr = TRUE) else ytck)
-  mtext(ifelse(par("mfg")[1] == 7, "Year", ""), side = 1, line = 3, cex = 1.5*par("cex"))
-  if(sum(mfgs == i) == 2) {
-    lines(env_data$year, env_data[,vars[which(mfgs==i)[2]]], lwd = 2, col = cols[which(mfgs==i)[2]])
-    legend("right", legend = if(ylabs[i] == "PC") 1:2 else c("DI","PI"), 
-           inset = c(-0.15,0), xpd = TRUE, lwd = 2, col = cols[which(mfgs == i)], bty = "n")
-  }
-}
-```
-
-![](RhAu_BayesGLMM_files/figure-gfm/env_timeseries_plots-1.png)<!-- -->
+<img src="RhAu_BayesGLMM_files/figure-gfm/PCA_plots-1.png" width="75%" style="display: block; margin: auto;" />
+<img src="RhAu_BayesGLMM_files/figure-gfm/env_timeseries_plots-1.png" width="50%" style="display: block; margin: auto;" />
 
 # GLMMs of Burrow Occupancy
 
