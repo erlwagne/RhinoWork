@@ -204,7 +204,7 @@ grid.arrange(pdo.gg, mei.gg, sstdi.gg, sstpi.gg, cui.gg, sto.gg, chldi.gg, chlpi
 
 # base graphics
 dev.new(width = 10, height = 10)
-par(mfrow = c(5,2), mar = c(2,5,2,1), oma = c(3,0,0,0))
+par(mfrow = c(5,2), mar = c(2,5,1,1), oma = c(3,0,0,0))
 vars <- c("pdo_index","mei_avg","sst_DI_spring","sst_PI_spring","cui_spring","st_onset",
   "chla_DI_spring","chla_PI_spring","PC1","PC2")
 ylabs <- c("PDO","MEI","SST (DI)", "SST (PI)", "Coastal upwelling", "Spring transition (d)",
@@ -213,7 +213,7 @@ for(i in 1:length(vars)) {
   plot(env_data$year, env_data[,vars[i]], pch = "", las = 1, cex.lab = 1.5, cex.axis = 1,
        xlab = "", ylab = ylabs[i], xpd = NA)
   mtext(ifelse(par("mfg")[1] == 5, "Year", ""), side = 1, line = 3, cex = 1.5*par("cex"))
-  grid(nx = NA, ny = NULL, col = "lightgray", lty = 1)
+  # grid(nx = NA, ny = NULL, col = "lightgray", lty = 1)
   abline(v = env_data$year, col = "lightgray")
   rug(env_data$year[env_data$year %% 5 != 0], ticksize = -0.04)
   lines(env_data$year, env_data[,vars[i]], type = "l", lwd = 2)
@@ -226,16 +226,19 @@ for(i in 1:length(vars)) {
 #           "chla_DI_spring","chla_PI_spring","PC1","PC2")
 # cols <- c("purple","orangered","darkred","salmon","darkblue","green","darkgreen","lightgreen",
 #           "black","darkgray")
-# ylabs <- c("PDO","MEI","SST", "SST", "CUI", "ST", "Chl a", "Chl a", "PC", "PC")
+# ylabs <- c("PDO","MEI","SST", "SST", "CUI", "Transition", 
+#            bquote("Chl " * italic(a)), bquote("Chl " * italic(a)), "PC", "PC")
 # for(i in unique(ylabs)) {
-#   plot(env_data$year, env_data[,vars[grep(i,ylabs)[1]]], type = "l", lwd = 2, 
+#   plot(env_data$year, env_data[,vars[grep(i,ylabs)[1]]], type = "l", lwd = 2,
 #        col = cols[grep(i,ylabs)[1]], las = 1, cex.axis = 1.2, cex.lab = 1.5, xlab = "", ylab = i,
-#        ylim = range(env_data[,vars[grep(i,ylabs)]], na.rm = TRUE), bty = "n")
+#        ylim = range(env_data[,vars[grep(i,ylabs)]], na.rm = TRUE), xaxt = "n", yaxt = "n", bty = "n")
+#   axis(side = 1, at = env_data$year, cex.axis = 1.2)
+#   axis(side = 2, at = axisTicks(par("usr")[3:4], log = FALSE, nint = 3), cex.axis = 1.2)
 #   rug(env_data$year[env_data$year %% 5 != 0], ticksize = -0.04)
 #   mtext(ifelse(par("mfg")[1] == 5, "Year", ""), side = 1, line = 3, cex = 1.5*par("cex"))
 #   if(sum(ylabs == i) == 2) {
 #     lines(env_data$year, env_data[,vars[grep(i,ylabs)[2]]], lwd = 2, col = cols[grep(i,ylabs)[2]])
-#     legend("topright", c("DI","PI"), lwd = 2, col = cols[grep(i,ylabs)])  
+#     legend("topright", c("DI","PI"), lwd = 2, col = cols[grep(i,ylabs)])
 #   }
 # }
 
