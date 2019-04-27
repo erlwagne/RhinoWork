@@ -227,7 +227,8 @@ vars <- c("pdo_index","mei_avg","sst_DI_spring","sst_PI_spring","cui_spring","st
 cols <- c("purple","red","darkred","salmon","darkblue","SpringGreen","darkgreen","lightgreen",
           "black","darkgray")
 mfgs <- c(1,2,3,3,4,5,6,6,7,7)
-ylabs <- c("PDO","MEI","SST", "CUI", "ST", bquote("Chl " * italic(a)), "PC")
+ylabs <- c("PDO","MEI",bquote("SST (" * degree * "C)"), "CUI", "ST", 
+           bquote("Chl " * italic(a) * " (mg/m" ^3 * ")"), "PC")
 for(i in unique(mfgs)) {
   plot(env_data$year, env_data[,vars[match(i,mfgs)]], type = "l", lwd = 2, col = cols[match(i,mfgs)], 
        cex.axis = 1.2, cex.lab = 1.5, xlab = "", ylab = ylabs[i], 
@@ -241,11 +242,9 @@ for(i in unique(mfgs)) {
   if(sum(mfgs == i) == 2) {
     lines(env_data$year, env_data[,vars[which(mfgs==i)[2]]], lwd = 2, col = cols[which(mfgs==i)[2]])
     legend("right", legend = if(ylabs[i] == "PC") 1:2 else c("DI","PI"), 
-           inset = c(-0.2,0), xpd = TRUE, lwd = 2, col = cols[which(mfgs == i)])
+           inset = c(-0.2,0), xpd = TRUE, lwd = 2, col = cols[which(mfgs == i)], bty = "n")
   }
 }
-
-
 
 
 #---------------------------------
