@@ -1803,7 +1803,7 @@ indicators to see how severe the multicollinearity might be if they were
 used as raw regression
 inputs.
 
-<img src="RhAu_BayesGLMM_files/figure-gfm/env_corrplot-1.png" width="50%" style="display: block; margin: auto;" />
+<img src="RhAu_BayesGLMM_files/figure-gfm/env_corrplot-1.png" width="50%" />
 
 Now we perform a principal components analysis to extract the major
 trends in the suite of oceanographic indicators for use as regression
@@ -1817,13 +1817,13 @@ inputs.
 
     Joining, by = "year"
 
-<img src="RhAu_BayesGLMM_files/figure-gfm/PCA_plots-1.png" width="75%" style="display: block; margin: auto;" />
+<img src="RhAu_BayesGLMM_files/figure-gfm/PCA_plots-1.png" width="75%" />
 
 To help interpret the principal components, let’s see how they track the
 time series of oceanographic
 indicators…
 
-<img src="RhAu_BayesGLMM_files/figure-gfm/env_timeseries_plots-1.png" width="50%" style="display: block; margin: auto;" />
+<img src="RhAu_BayesGLMM_files/figure-gfm/env_timeseries_plots-1.png" width="50%" />
 
 # GLMMs of Burrow Occupancy
 
@@ -1920,7 +1920,7 @@ replicate pseudo-data from its posterior predictive distribution and
 comparing them to the real
 data…
 
-<img src="RhAu_BayesGLMM_files/figure-gfm/plot_ppd_occ-1.png" width="40%" style="display: block; margin: auto;" />
+<img src="RhAu_BayesGLMM_files/figure-gfm/plot_ppd_occ-1.png" width="40%" />
 
 ## Model Selection
 
@@ -2054,7 +2054,7 @@ Model 3
 Marginal posterior predictive density of largest
 model
 
-<img src="RhAu_BayesGLMM_files/figure-gfm/plot_ppd_suc-1.png" width="40%" style="display: block; margin: auto;" />
+<img src="RhAu_BayesGLMM_files/figure-gfm/plot_ppd_suc-1.png" width="40%" />
 
 ## Model Selection
 
@@ -2091,4 +2091,4 @@ and comparing them to the sample proportion of occupied burrows (with
 binomial 95% confidence
 intervals).
 
-<img src="RhAu_BayesGLMM_files/figure-gfm/suc_fitted_timeseries-1.png" width="60%" style="display: block; margin: auto;" />
+<img src="RhAu_BayesGLMM_files/figure-gfm/suc_fitted_timeseries-1.png" width="60%" />
