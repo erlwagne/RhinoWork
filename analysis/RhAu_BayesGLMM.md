@@ -2,7 +2,7 @@ Reproductive Success of Two Rhinoceros Auklet Colonies in the Salish Sea
 and California Current
 ================
 Eric Wagner, Eric Buhle, …
-April 21, 2019
+2019-04-28
 
   - [Overview](#overview)
   - [Setup and data](#setup-and-data)

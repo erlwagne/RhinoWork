@@ -2,7 +2,7 @@
 title: Reproductive Success of Two Rhinoceros Auklet Colonies in the Salish Sea and California
   Current
 author: "Eric Wagner, Eric Buhle, ..."
-date: "April 21, 2019"
+date: "`r format(Sys.Date())`"
 output:
   github_document:
     toc: true
