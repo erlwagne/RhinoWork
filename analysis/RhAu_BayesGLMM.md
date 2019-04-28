@@ -1962,7 +1962,7 @@ and comparing them to the sample proportion of occupied burrows (with
 binomial 95% confidence
 intervals).
 
-<img src="RhAu_BayesGLMM_files/figure-gfm/occ_fitted_timeseries-1.png" width="75%" style="display: block; margin: auto;" />
+<img src="RhAu_BayesGLMM_files/figure-gfm/occ_fitted_timeseries-1.png" width="60%" style="display: block; margin: auto;" />
 
 # GLMMs of Apparent Fledging Success
 
@@ -2091,4 +2091,4 @@ and comparing them to the sample proportion of occupied burrows (with
 binomial 95% confidence
 intervals).
 
-<img src="RhAu_BayesGLMM_files/figure-gfm/suc_fitted_timeseries-1.png" width="75%" style="display: block; margin: auto;" />
+<img src="RhAu_BayesGLMM_files/figure-gfm/suc_fitted_timeseries-1.png" width="60%" style="display: block; margin: auto;" />
