@@ -1803,7 +1803,7 @@ indicators to see how severe the multicollinearity might be if they were
 used as raw regression
 inputs.
 
-<img src="RhAu_BayesGLMM_files/figure-gfm/env_corrplot-1.png" width="75%" style="display: block; margin: auto;" />
+<img src="RhAu_BayesGLMM_files/figure-gfm/env_corrplot-1.png" width="50%" style="display: block; margin: auto;" />
 
 Now we perform a principal components analysis to extract the major
 trends in the suite of oceanographic indicators for use as regression

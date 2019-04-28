@@ -212,18 +212,18 @@ env_data  %>% mutate_at(vars(pdo_index:chla_PI_spring), list(~round(.,2))) %>% k
 
 Let's explore the patterns of (a)synchrony among the oceanographic indicators to see how severe the multicollinearity might be if they were used as raw regression inputs. 
 
-```{r env_corrplot, fig.height = 7, fig.width = 7, echo = FALSE}
+```{r env_corrplot, fig.dim = c(7,7), out.width = "50%", echo = FALSE}
 dat <- select(env_data, c(pdo_index, mei_avg, sst_DI_spring, sst_PI_spring, 
                           cui_spring, st_onset, chla_DI_spring, chla_PI_spring))
 colnames(dat) <- c("PDO","MEI","SST (DI)","SST (PI)","CUI","ST","Chl a (DI)", "Chl a (PI)")
-corrplot(cor(dat, use = "pairwise"), method = "ellipse", diag = FALSE, tl.col = "black")
+corrplot(cor(dat, use = "pairwise"), method = "ellipse", diag = FALSE, tl.col = "black", tl.cex = 1.5, cl.cex = 1.2)
 ```
 
 Now we perform a principal components analysis to extract the major trends in the suite of oceanographic indicators for use as regression inputs.
 
 ```{r PCA, message = FALSE, echo = FALSE}
 pca_env <- prcomp(~ pdo_index + mei_avg + sst_DI_spring + sst_PI_spring + 
-                    cui_spring + chla_DI_spring + chla_PI_spring + st_onset, 
+                    cui_spring + st_onset + chla_DI_spring + chla_PI_spring, 
                   data = env_data, scale = TRUE)
 
 # pca_env            # rotation matrix gives the loadings
@@ -239,18 +239,21 @@ rhau <- left_join(nest_data, select(env_data, c(year, PC1, PC2)))
 ```
 ```{r PCA_plots, fig.height = 7, fig.width = 7, echo = FALSE}
 par(mfcol = c(2,2))
+labs <- c("PDO","MEI","SST (DI)","SST (PI)","CUI","ST","Chl a (DI)","Chl a (PI)")
+names(labs) <- c("pdo_index","mei_avg","sst_DI_spring","sst_PI_spring","cui_spring","st_onset",
+          "chla_DI_spring","chla_PI_spring")
 # scree plot
 imp <- summary(pca_env)$importance["Proportion of Variance",]
-barplot(imp, xlab = "", ylab = "Proportion of variance", names.arg = names(imp))   
+barplot(imp, xlab = "", ylab = "Proportion of variance", names.arg = labs[names(imp)])   
 # biplot of PCAs and oceanographic indicators
-biplot(pca_env) 
+biplot(pca_env, ylabs = labs[dimnames(pca_env$rotation)[[1]]]) 
 # PC1 loadings
 xloc <- barplot(pca_env$rotation[,"PC1"], xaxt = "n", main = "PC1 loadings")
-text(xloc, par("usr")[3], labels = dimnames(pca_env$rotation)[[1]], adj = c(1,1), srt = 45, 
+text(xloc, par("usr")[3], labels = labs[dimnames(pca_env$rotation)[[1]]], adj = c(1,1), srt = 45, 
      xpd = TRUE)
 # PC2 loadings
 xloc <- barplot(pca_env$rotation[,"PC2"], xaxt = "n", main = "PC2 loadings")
-text(xloc, par("usr")[3], labels = dimnames(pca_env$rotation)[[1]], adj = c(1,1), srt = 45, 
+text(xloc, par("usr")[3], labels = labs[dimnames(pca_env$rotation)[[1]]], adj = c(1,1), srt = 45, 
      xpd = TRUE)
 ```
 
