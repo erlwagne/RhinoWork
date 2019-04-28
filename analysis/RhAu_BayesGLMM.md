@@ -17,147 +17,14 @@ colony:
 
 <img src="https://www.eopugetsound.org/sites/default/files/styles/magazinewidth_592px/public/topical_articles/images/16343412270_5cfaa5c480_o.jpg?itok=WjzI1_2K" width="50%" />
 
+\[Cap
+
 # Setup and data
 
 First we load the libraries and functions we’ll use.
 
-``` r
-if(!require(here)) install.packages("here::here")
-library(here)
-if(!require(rstanarm)) install.package("rstanarm")
-library(rstanarm)
-if(!require(bayesplot)) install.package("bayesplot")
-library(bayesplot)
-if(!require(Hmisc)) install.package("Hmisc")
-library(Hmisc)
-if(!require(sm)) install.package("sm")
-library(sm)
-if(!require(loo)) install.package("loo")
-library(loo)
-if(!require(denstrip)) install.package("denstrip")
-library(denstrip)
-if(!require(yarrr)) install.package("yarrr")
-library(yarrr)
-if(!require(corrplot)) install.package("corrplot")
-library(corrplot)
-if(!require(lubridate)) install.package("lubridate")
-library(lubridate)
-if(!require(tidyr)) install.package("tidyr")
-library(tidyr)
-if(!require(dplyr)) install.package("dplyr")
-library(dplyr)
-if(!require(gridExtra)) install.package("gridExtra")
-library(gridExtra)
-source(here::here("analysis","loo_compair.R"))
-```
-
 Next we’ll read in the datasets from various sources and manipulate them
 into a usable format.
-
-``` r
-# Nest success data
-nest_data <- read.csv(here::here("data","RhAu2.csv"), fileEncoding="UTF-8-BOM")
-names(nest_data) <- gsub("lastcheck", "last_check", tolower(names(nest_data)))
-
-# PDO from ERSST V3b https://www.esrl.noaa.gov/psd/pdo/ Using EOF from 1920 to 2014 for N Pacific
-# Monthly 1854-2019
-pdo <- read.csv(here::here("data","pdo.timeseries.ersstv3b.csv"), na.strings = "-9999.000")
-colnames(pdo)[2] <- "pdo"
-pdo$Date <- ymd(pdo$Date)
-pdo <- mutate(pdo, year = ifelse(month(Date) > 8, year(Date) + 1, year(Date)),
-              month = month(Date, label = TRUE), Date = NULL)
-pdo <- spread(pdo, month, pdo)
-pdo <- select(pdo, c(year, Sep:Dec, Jan:Aug))
-pdo <- data.frame(pdo, pdo_index = rowMeans(select(pdo, Nov:Mar)))
-
-# MEI v.2 1979-2018
-# Wide format: rows are years, columns are months
-mei <- read.csv(here::here("data","MEIv2.csv"))
-colnames(mei) <- tolower(colnames(mei))
-mei <- gather(mei, months, mei, decjan:novdec)
-mei <- mutate(mei, year = ifelse(months %in% c("sepoct","octnov","novdec"), year + 1, year))
-mei <- spread(mei, months, mei)
-mei <- select(mei, c(year,sepoct,octnov,novdec,decjan,
-                     janfeb,febmar,marapr,aprmay,mayjun,junjul,julaug,augsep))
-mei <- data.frame(mei, mei_avg = rowMeans(select(mei, sepoct:augsep)))
-
-# Average monthly SST from DFO stations
-# Wide format: year x month
-sst_amph <- read.csv(here::here("data",grep("Amphitrite", list.files(here::here("data")), 
-                                            value = TRUE)),
-                     skip = 1, na.strings = "99.99")
-colnames(sst_amph) <- tolower(colnames(sst_amph))
-sst_amph <- mutate(sst_amph, sst_amph_spring = rowMeans(select(sst_amph, apr:jun)))
-
-sst_race <- read.csv(here::here("data",grep("Race_Rocks", list.files(here::here("data")), 
-                                            value = TRUE)),
-                     skip = 1, na.strings = "99.99")
-colnames(sst_race) <- tolower(colnames(sst_race))
-sst_race <- mutate(sst_race, sst_race_spring = rowMeans(select(sst_race, apr:jun)))
-
-# Coastal Upwelling Index 48N 125W 1946-2018
-# Wide format: rows are years, columns are months
-cui <- read.csv(here::here("data","CoastalUpwellingIndex.csv"))[,-1]
-colnames(cui)[1] <- "year"
-cui <- mutate(cui, cui_spring = rowMeans(select(cui, Apr:Jun)))
-
-# Biological spring transition from NWFSC Ocean Ecosystem Indicators
-# Long format, 1970-2018
-biol_trans <- read.csv(here::here("data","biological_spring_transition_NWFSC.csv"),
-                       skip = 10, na.strings = "Never ", stringsAsFactors = FALSE)
-colnames(biol_trans) <- c("year","st_onset","st_end","st_duration")
-biol_trans <- mutate(biol_trans, st_onset = yday(ydm(paste(year, st_onset, sep = "-"))))
-biol_trans <- mutate(biol_trans, st_onset = replace_na(st_onset, 365), 
-                     st_end = replace_na(st_end, 365))
-
-# Area-Averaged of Sea Surface Temperature at 11 microns (Day) monthly 4 km [MODIS-Aqua ()
-# at Protection and Destruction Island
-# Monthly 2009-2018
-sst_DI <- read.csv(here::here("data","SST_DI_2002_2019.csv"), skip = 8, 
-                   na.strings = "-32767")[,1:2]
-colnames(sst_DI) <- c("date","sst")
-sst_DI$date <- mdy_hm(sst_DI$date)
-sst_DI <- mutate(sst_DI, year = year(date), month = month(date, label = TRUE), date = NULL)
-sst_DI <- spread(sst_DI, month, sst)
-sst_DI <- mutate(sst_DI, sst_DI_spring = rowMeans(select(sst_DI, Apr:Jun)))
-
-sst_PI <- read.csv(here::here("data","SST_PI_2002_2019.csv"), skip = 8, 
-                   na.strings = "-32767")[,1:2]
-colnames(sst_PI) <- c("date","sst")
-sst_PI$date <- ymd_hms(sst_PI$date)
-sst_PI <- mutate(sst_PI, year = year(date), month = month(date, label = TRUE), date = NULL)
-sst_PI <- spread(sst_PI, month, sst)
-sst_PI <- mutate(sst_PI, sst_PI_spring = rowMeans(select(sst_PI, Apr:Jun)))
-
-#  Area-Averaged of Chlorophyll a concentration monthly 4 km [MODIS-Aqua MODISA_L3m_CHL v2018]
-# at Protection and Destruction Island
-# Monthly 2002-2019
-chla_DI <- read.csv(here::here("data","Chla_DI_2002_2019.csv"), skip = 8, na.strings = "-32767")[,1:2]
-colnames(chla_DI) <- c("date","chla")
-chla_DI$date <- mdy_hm(chla_DI$date)
-chla_DI <- mutate(chla_DI, year = year(date), month = month(date, label = TRUE), date = NULL)
-chla_DI <- spread(chla_DI, month, chla)
-chla_DI <- mutate(chla_DI, chla_DI_spring = rowMeans(select(chla_DI, Apr:Jun)))
-
-chla_PI <- read.csv(here::here("data","Chla_PI_2002_2019.csv"), skip = 8, na.strings = "-32767")[,1:2]
-colnames(chla_PI) <- c("date","chla")
-chla_PI$date <- mdy_hm(chla_PI$date)
-chla_PI <- mutate(chla_PI, year = year(date), month = month(date, label = TRUE), date = NULL)
-chla_PI <- spread(chla_PI, month, chla)
-chla_PI <- mutate(chla_PI, chla_PI_spring = rowMeans(select(chla_PI, Apr:Jun)))
-
-# Merge covariate data
-env_data <- Reduce(inner_join, list(select(pdo, c(year, pdo_index)), 
-                                    select(mei, c(year, mei_avg)), 
-                                    select(sst_DI, c(year, sst_DI_spring)), 
-                                    select(sst_PI, c(year, sst_PI_spring)),
-                                    select(sst_amph, c(year, sst_amph_spring)),
-                                    select(sst_race, c(year, sst_race_spring)),
-                                    select(cui, c(year, cui_spring)),
-                                    select(chla_DI, c(year, chla_DI_spring)),
-                                    select(chla_PI, c(year, chla_PI_spring)),
-                                    select(biol_trans, c(year, st_onset, st_duration))))
-```
 
 # Principal Components Analysis of Oceanographic Indicators
 
