@@ -198,14 +198,13 @@ env_data <- Reduce(inner_join, list(select(pdo, c(year, pdo_index)),
 Let's take a look at the nest data...
 
 ```{r show_nest, echo = FALSE}
-nest_data %>% head() %>% knitr::kable() #%>% kableExtra::kable_styling(bootstrap_options = c("striped","hover"))
+nest_data %>% head() %>% kable() #%>% kableExtra::kable_styling(bootstrap_options = c("striped","hover"))
 ```
 
 And here are the environmental covariates (describe oceanographic indicators)...
 
 ```{r show_env, echo = FALSE}
-env_data  %>% mutate_at(vars(pdo_index:chla_PI_spring), list(~round(.,2))) %>% knitr::kable() 
-#%>% kableExtra::kable_styling(bootstrap_options = c("striped","hover"))
+env_data %>% kable(digits = 2) #%>% kableExtra::kable_styling(bootstrap_options = c("striped","hover"))
 ```
 
 # Principal Components Analysis of Oceanographic Indicators
