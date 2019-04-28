@@ -26,7 +26,6 @@ library(captioner)
 fig_nums <- captioner("Figure S", suffix = ": ", auto_space = FALSE, 
                       style = "b", style_prefix = TRUE)
 ```
-
 ```{r width, include=FALSE}
 options(width = 130)
 ```
@@ -49,32 +48,34 @@ First we load the libraries and functions we'll use.
 ```{r getting_started, include = FALSE, message = FALSE, warning = FALSE}
 if(!require(here)) install.packages("here::here")
 library(here)
-if(!require(rstanarm)) install.package("rstanarm")
+if(!require(rstanarm)) install.packages("rstanarm")
 library(rstanarm)
-if(!require(bayesplot)) install.package("bayesplot")
+if(!require(bayesplot)) install.packages("bayesplot")
 library(bayesplot)
-if(!require(Hmisc)) install.package("Hmisc")
+if(!require(Hmisc)) install.packages("Hmisc")
 library(Hmisc)
-if(!require(sm)) install.package("sm")
+if(!require(sm)) install.packages("sm")
 library(sm)
-if(!require(loo)) install.package("loo")
+if(!require(loo)) install.packages("loo")
 library(loo)
-if(!require(denstrip)) install.package("denstrip")
+if(!require(denstrip)) install.packages("denstrip")
 library(denstrip)
-if(!require(yarrr)) install.package("yarrr")
+if(!require(yarrr)) install.packages("yarrr")
 library(yarrr)
-if(!require(corrplot)) install.package("corrplot")
+if(!require(corrplot)) install.packages("corrplot")
 library(corrplot)
-if(!require(matrixStats)) install.package("corrplot")
+if(!require(matrixStats)) install.packages("corrplot")
 library(matrixStats)
-if(!require(lubridate)) install.package("lubridate")
+if(!require(lubridate)) install.packages("lubridate")
 library(lubridate)
-if(!require(tidyr)) install.package("tidyr")
+if(!require(tidyr)) install.packages("tidyr")
 library(tidyr)
-if(!require(dplyr)) install.package("dplyr")
+if(!require(dplyr)) install.packages("dplyr")
 library(dplyr)
-if(!require(gridExtra)) install.package("gridExtra")
+if(!require(gridExtra)) install.packages("gridExtra")
 library(gridExtra)
+if(!require(kableExtra)) install.packages("kableExtra")
+library(kableExtra)
 source(here::here("analysis","loo_compair.R"))
 ```
 
@@ -190,6 +191,18 @@ env_data <- Reduce(inner_join, list(select(pdo, c(year, pdo_index)),
                                     select(chla_DI, c(year, chla_DI_spring)),
                                     select(chla_PI, c(year, chla_PI_spring)),
                                     select(biol_trans, c(year, st_onset, st_duration))))
+```
+
+Let's take a look at the nest data...
+
+```{r show_nest, echo = FALSE}
+nest_data %>% head() %>% knitr::kable() #%>% kableExtra::kable_styling(bootstrap_options = c("striped","hover"))
+```
+
+And here are the environmental covariates (describe oceanographic indicators)...
+
+```{r show_env, echo = FALSE}
+env_data  %>% mutate_at(vars(pdo_index:chla_PI_spring), list(~round(.,2))) %>% knitr::kable() #%>% kableExtra::kable_styling(bootstrap_options = c("striped","hover"))
 ```
 
 # Principal Components Analysis of Oceanographic Indicators
