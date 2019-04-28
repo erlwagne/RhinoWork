@@ -377,7 +377,7 @@ save(list = grep("occ", ls(), value = TRUE), file = here::here("analysis","cache
 
 We can explore the predictions of the selected model by plotting the posterior distribution of fitted values as time series for each island and comparing them to the sample proportion of occupied burrows (with binomial 95% confidence intervals).
 
-```{r occ_fitted_timeseries, fig.dim = c(7,5), out.width = "60%", echo = FALSE}
+```{r occ_fitted_timeseries, fig.align = "center", fig.dim = c(7,5), out.width = "60%", echo = FALSE}
 ## Time series of fitted and observed fledging success at DI and PI
 ## (This will take some time to render. For alternate version, 
 ## comment out both calls to densregion() and uncomment polygon()).
