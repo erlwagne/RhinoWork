@@ -194,7 +194,7 @@ replicate pseudo-data from its posterior predictive distribution and
 comparing them to the real
 data…
 
-<img src="RhAu_BayesGLMM_files/figure-gfm/plot_ppd_occ-1.png" width="40%" style="display: block; margin: auto;" />
+<img src="RhAu_BayesGLMM_files/figure-gfm/plot_ppd_occ-1.png" width="50%" style="display: block; margin: auto;" />
 
 ## Model Selection
 
@@ -328,7 +328,7 @@ Model 3
 Marginal posterior predictive density of largest
 model
 
-<img src="RhAu_BayesGLMM_files/figure-gfm/plot_ppd_suc-1.png" width="40%" style="display: block; margin: auto;" />
+<img src="RhAu_BayesGLMM_files/figure-gfm/plot_ppd_suc-1.png" width="50%" style="display: block; margin: auto;" />
 
 ## Model Selection
 
