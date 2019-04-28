@@ -244,7 +244,7 @@ names(labs) <- c("pdo_index","mei_avg","sst_DI_spring","sst_PI_spring","cui_spri
           "chla_DI_spring","chla_PI_spring")
 # scree plot
 imp <- summary(pca_env)$importance["Proportion of Variance",]
-barplot(imp, xlab = "", ylab = "Proportion of variance", names.arg = labs[names(imp)])   
+barplot(imp, xlab = "", ylab = "Proportion of variance", names.arg = names(imp))   
 # biplot of PCAs and oceanographic indicators
 biplot(pca_env, ylabs = labs[dimnames(pca_env$rotation)[[1]]]) 
 # PC1 loadings
