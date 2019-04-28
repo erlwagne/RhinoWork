@@ -202,7 +202,8 @@ nest_data %>% head() %>% knitr::kable() #%>% kableExtra::kable_styling(bootstrap
 And here are the environmental covariates (describe oceanographic indicators)...
 
 ```{r show_env, echo = FALSE}
-env_data  %>% mutate_at(vars(pdo_index:chla_PI_spring), list(~round(.,2))) %>% knitr::kable() #%>% kableExtra::kable_styling(bootstrap_options = c("striped","hover"))
+env_data  %>% mutate_at(vars(pdo_index:chla_PI_spring), list(~round(.,2))) %>% knitr::kable() 
+#%>% kableExtra::kable_styling(bootstrap_options = c("striped","hover"))
 ```
 
 # Principal Components Analysis of Oceanographic Indicators
