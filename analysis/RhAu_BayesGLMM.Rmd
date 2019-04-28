@@ -1,5 +1,5 @@
 ---
-title: Nest Success of Two Rhinoceros Auklet Colonies in the Salish Sea and California
+title: Reproductive Success of Two Rhinoceros Auklet Colonies in the Salish Sea and California
   Current
 author: "Eric Wagner, Eric Buhle, ..."
 date: "April 21, 2019"
@@ -17,8 +17,8 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(tidy = FALSE, highlight = TRUE, comment = NA, 
-                      dev = "png", dev.args = list(type = "cairo-png"))
+knitr::opts_chunk$set(tidy = FALSE, highlight = TRUE, comment = NA, echo = TRUE,
+                      dev = "png", dev.args = list(type = "cairo-png"), fig.align = "center")
 
 if(!require(captioner))
   devtools::install_github("adletaw/captioner")
@@ -35,11 +35,12 @@ options(width = 130)
 
 This is a Rhinoceros Auklet from the Protection Island colony:
 
-```{r auklet_image, out.width = "50%", echo = FALSE}
+```{r auklet_image, fig.align = "left", out.width = "50%", echo = FALSE}
 knitr::include_graphics("https://www.eopugetsound.org/sites/default/files/styles/magazinewidth_592px/public/topical_articles/images/16343412270_5cfaa5c480_o.jpg?itok=WjzI1_2K")
 ```
 
-[Cap
+
+[Cap'n: Add elegant prose about the study system, questions, and brief methods here; add subsections if desired]
 
 # Setup and data
 
@@ -64,6 +65,8 @@ if(!require(yarrr)) install.package("yarrr")
 library(yarrr)
 if(!require(corrplot)) install.package("corrplot")
 library(corrplot)
+if(!require(matrixStats)) install.package("corrplot")
+library(matrixStats)
 if(!require(lubridate)) install.package("lubridate")
 library(lubridate)
 if(!require(tidyr)) install.package("tidyr")
@@ -193,7 +196,7 @@ env_data <- Reduce(inner_join, list(select(pdo, c(year, pdo_index)),
 
 Let's explore the patterns of (a)synchrony among the oceanographic indicators to see how severe the multicollinearity might be if they were used as raw regression inputs. 
 
-```{r env_corrplot, fig.align = "center", fig.height = 7, fig.width = 7, dpi = 200, out.width = "75%", echo = FALSE}
+```{r env_corrplot, fig.height = 7, fig.width = 7, dpi = 200, out.width = "75%", echo = FALSE}
 dat <- select(env_data, c(pdo_index, mei_avg, sst_DI_spring, sst_PI_spring, 
                           cui_spring, st_onset, chla_DI_spring, chla_PI_spring))
 colnames(dat) <- c("PDO","MEI","SST (DI)","SST (PI)","CUI","ST","Chl a (DI)", "Chl a (PI)")
@@ -202,14 +205,15 @@ corrplot(cor(dat, use = "pairwise"), method = "ellipse", diag = FALSE, tl.col = 
 
 Now we perform a principal components analysis to extract the major trends in the suite of oceanographic indicators for use as regression inputs.
 
-```{r PCA, message = FALSE}
+```{r PCA, message = FALSE, echo = FALSE}
 pca_env <- prcomp(~ pdo_index + mei_avg + sst_DI_spring + sst_PI_spring + 
                     cui_spring + chla_DI_spring + chla_PI_spring + st_onset, 
                   data = env_data, scale = TRUE)
 
-pca_env            # rotation matrix gives the loadings
+# pca_env            # rotation matrix gives the loadings
 summary(pca_env)   # proportion of variance associated with each PC
-
+```
+```{r merge_PCs, echo = FALSE}
 ## Add PC1 and PC2 to covariate data
 scores <- predict(pca_env, newdata = env_data)
 env_data <- data.frame(env_data, PC1 = scale(scores[,"PC1"]), PC2 = scale(scores[,"PC2"]))
@@ -217,7 +221,7 @@ env_data <- data.frame(env_data, PC1 = scale(scores[,"PC1"]), PC2 = scale(scores
 ## Merge PC1 and PC2 into nest data
 rhau <- left_join(nest_data, select(env_data, c(year, PC1, PC2)))
 ```
-```{r PCA_plots, fig.align = "center", fig.height = 7, fig.width = 7, dpi = 300, out.width = "75%", echo = FALSE}
+```{r PCA_plots, fig.height = 7, fig.width = 7, dpi = 300, out.width = "75%", echo = FALSE}
 par(mfcol = c(2,2))
 # scree plot
 imp <- summary(pca_env)$importance["Proportion of Variance",]
@@ -233,7 +237,10 @@ xloc <- barplot(pca_env$rotation[,"PC2"], xaxt = "n", main = "PC2 loadings")
 text(xloc, par("usr")[3], labels = dimnames(pca_env$rotation)[[1]], adj = c(1,1), srt = 45, 
      xpd = TRUE)
 ```
-```{r env_timeseries_plots, fig.align = "center", fig.height = 10, fig.width = 5, dpi = 300, out.width = "50%", echo = FALSE}
+
+To help interpret the principal components, let's see how they track the time series of oceanographic indicators...
+
+```{r env_timeseries_plots, fig.height = 10, fig.width = 5, dpi = 300, out.width = "50%", echo = FALSE}
 ## Time-series plots of indicators and PCs
 par(mfrow = c(7,1), mar = c(1,5,1.2,4.5), oma = c(3,0,0,0))
 vars <- c("pdo_index","mei_avg","sst_DI_spring","sst_PI_spring","cui_spring","st_onset",
@@ -263,39 +270,13 @@ for(i in unique(mfgs)) {
 
 # GLMMs of Burrow Occupancy
 
-Now we are ready to start fitting some GLMMs to the burrow occupancy data...[more on modeling, explanations of each model]
+## Model Fitting and Assessment
 
-```{r fit_occ0, eval = refit_occ}
-## Random effects of site and year
+Now we are ready to start fitting some GLMMs to the burrow occupancy data...[more on modeling, explanations of each model (starting with model 2 as a baseline description of all known variance components in the study design)]
 
-# Intercept-only model 
-occ0 <- stan_glmer(cbind(egg, viable - egg) ~ (1 | site) + (1 | year),
-                   data =  rhau,
-                   family = binomial(link = logit),
-                   prior_intercept = normal(0,5),
-                   prior_covariance = decov(),
-                   chains = 3, iter = 2000, warmup = 1000, cores = 3)
-```
-```{r summary_occ0}
-summary(occ0, prob = c(0.025,0.5,0.975), digits = 2)
-```
+Model 1
 
-
-```{r fit_occ1, eval = refit_occ}
-# Inter-island differences, constant across years
-occ1 <- stan_glmer(cbind(egg, viable - egg) ~ island + (1 | site) + (1 | year),
-                   data =  rhau,
-                   family = binomial(link = logit),
-                   prior = normal(0,5),
-                   prior_intercept = normal(0,5),
-                   prior_covariance = decov(),
-                   chains = 3, iter = 2000, warmup = 1000, cores = 3)
-```
-```{r summary_occ1}
-summary(occ1, prob = c(0.025,0.5,0.975), digits = 2)
-```
-
-```{r fit_occ2, eval = refit_occ}
+```{r fit_occ2, eval = refit_occ, echo = FALSE}
 # Inter-island differences, varying among years
 occ2 <- stan_glmer(cbind(egg, viable - egg) ~ island + (1 | site) + (island | year),
                    data =  rhau,
@@ -305,12 +286,13 @@ occ2 <- stan_glmer(cbind(egg, viable - egg) ~ island + (1 | site) + (island | ye
                    prior_covariance = decov(),
                    chains = 3, iter = 2000, warmup = 1000, cores = 3)
 ```
-
-```{r summary_occ2}
-summary(occ2, prob = c(0.025,0.5,0.975), digits = 2)
+```{r print_occ2, echo = FALSE}
+occ2
 ```
 
-```{r fit_occ3, eval = refit_occ}
+Model 2
+
+```{r fit_occ3, eval = refit_occ, echo = FALSE}
 # Inter-island differences, varying among years, plus PC1 + PC2
 occ3 <- stan_glmer(cbind(egg, viable - egg) ~ island + PC1 + PC2 + (1 | site) + (island | year),
                    data =  rhau,
@@ -320,12 +302,13 @@ occ3 <- stan_glmer(cbind(egg, viable - egg) ~ island + PC1 + PC2 + (1 | site) + 
                    prior_covariance = decov(),
                    chains = 3, iter = 2000, warmup = 1000, cores = 3)
 ```
-
-```{r summary_occ3}
-summary(occ3, prob = c(0.025,0.5,0.975), digits = 2)
+```{r print_occ3, echo = FALSE}
+occ3
 ```
 
-```{r fit_occ4, eval = refit_occ}
+Model 3
+
+```{r fit_occ4, eval = refit_occ, echo = FALSE}
 # Inter-island differences plus PC1 + PC2, no random time-variation
 occ4 <- stan_glmer(cbind(egg, viable - egg) ~ island + PC1 + PC2 + (1 | site),
                    data =  rhau,
@@ -335,36 +318,245 @@ occ4 <- stan_glmer(cbind(egg, viable - egg) ~ island + PC1 + PC2 + (1 | site),
                    prior_covariance = decov(),
                    chains = 3, iter = 2000, warmup = 1000, cores = 3)
 ```
-
-```{r summary_occ4}
-summary(occ4, prob = c(0.025,0.5,0.975), digits = 2)
+```{r print_occ4, echo = FALSE}
+occ4
 ```
+
+We can assess the adequacy of the "full" model `occ3` by generating replicate pseudo-data from its posterior predictive distribution and comparing them to the real data...
+
+```{r plot_ppd_occ, fig.width = 4, fig.height = 4, echo = FALSE}
+## Model validation by graphical posterior predictive checking
+# default plot: marginal distribution of data and posterior predictive distribution
+pp_check(occ3)
+```
+
+
+## Model Selection
 
 We compare the expected out-of-sample predictive performance of the candidate models using the Bayesian Pareto-smoothed approxiamte leave-one-out cross-validation score...
 
-```{r loo_occ, eval = refit_occ}
+```{r loo_occ, eval = refit_occ, include = FALSE}
 ## Model selection by approximate leave-one-out cross-validation
-occ_loos <-  lapply(list(occ0 = occ0, occ1 = occ1, occ2 = occ2, occ3 = occ3, occ4 = occ4), loo)
-
+occ_loos <-  lapply(list(occ2 = occ2, occ3 = occ3, occ4 = occ4), loo)
+```
+```{r loo_occ_compare, echo = FALSE}
 # unpaired comparisons
 occ_compare <- loo_compare(occ_loos)
-
+print(occ_compare, simplify = FALSE)
+```
+```{r loo_occ_compair, echo = FALSE}
 # pairwise comparisons
 occ_compair <- loo_compair(occ_loos)
-```
-
-```{r print_loo_occ}
-occ_loos
-print(occ_compare, simplify = FALSE)
 occ_compair
 ```
-
-If we have refit the models, we cache the results to save time...
-
-```{r cache_occ, eval = !refit_occ}
+```{r cache_occ, eval = !refit_occ, include = FALSE}
 ## Cache stanfits and loo objects
 save(list = grep("occ", ls(), value = TRUE), file = here::here("analysis","cache","occ_stanfit_loo.RData"))
 ```
 
+## Plots
 
+We can explore the predictions of the selected model by plotting the posterior distribution of fitted values as time series for each island and comparing them to the sample proportion of occupied burrows (with binomial 95% confidence intervals).
+
+```{r occ_fitted_timeseries, fig.width = 7, height = 7, dpi = 300, out.width = "75%", echo = FALSE}
+## Time series of fitted and observed fledging success at DI and PI
+## (This will take some time to render. For alternate version, 
+## comment out both calls to densregion() and uncomment polygon()).
+par(mar = c(5.1,4.5,1,1))
+
+YY <- sort(unique(rhau$year))
+newdata <- data.frame(year = rep(YY, each = 2), site = "newsite",
+                      island = rep(c("DI","PI"), length(YY)))
+pfit <- posterior_linpred(occ2, transform = TRUE, re.form = ~ (1 | year), newdata = newdata)
+pobs <- aggregate(cbind(viable, egg) ~ year + island, data = rhau, sum)
+pobs_ci <- binconf(pobs$egg, n = pobs$viable)
+eval.points <- range(pobs_ci, apply(pfit,2,quantile,c(0.025,0.975)))
+eval.points <- seq(min(eval.points), max(eval.points), length = 300)
+xyDI <- pfit[,newdata$island=="DI"]
+pxyDI <- t(apply(xyDI, 2, function(x) 
+  sm.density(x, eval.points = eval.points, display = "none")$estimate))
+xyPI <- pfit[,newdata$island=="PI"]
+pxPI <- sm.density(as.vector(xyPI), display = "none")
+pxyPI <- t(apply(xyPI, 2, function(x) 
+  sm.density(x, eval.points = eval.points, display = "none")$estimate))
+
+plot(newdata$year[newdata$island=="PI"], apply(pfit[,newdata$island=="PI"],2,median), 
+     las = 1, cex.axis = 1.2, cex.lab = 1.5, type = "l", lwd = 3, col = "cornflowerblue",
+     xlab = "Year", ylab = bquote(italic(P) * "(burrow occupancy)"), 
+     ylim = range(pobs_ci, apply(pfit,2,quantile,c(0.025,0.975))), 
+     xaxs = "i", xaxt = "n", yaxs = "i")
+lines(newdata$year[newdata$island=="DI"], apply(pfit[,newdata$island=="DI"],2,median),
+      lwd = 3, col = "darkgray")
+axis(1, at = min(rhau$year):max(rhau$year))
+
+densregion(newdata$year[newdata$island=="PI"], eval.points, pxyPI,
+         colmax = transparent("cornflowerblue",0.1), colmin = "transparent")
+# polygon(c(newdata$year[newdata$island=="PI"], rev(newdata$year[newdata$island=="PI"])),
+#         c(apply(pfit[,newdata$island=="PI"],2,quantile,0.025), 
+#           rev(apply(pfit[,newdata$island=="PI"],2,quantile,0.975))), 
+#         col = transparent("cornflowerblue",0.7), border = NA)
+densregion(newdata$year[newdata$island=="DI"], eval.points, pxyDI,
+          colmax = transparent("darkgray",0.3), colmin = "transparent")
+# polygon(c(newdata$year[newdata$island=="DI"], rev(newdata$year[newdata$island=="DI"])),
+#         c(apply(pfit[,newdata$island=="DI"],2,quantile,0.025), 
+#           rev(apply(pfit[,newdata$island=="DI"],2,quantile,0.975))), 
+#         col = transparent("darkgray",0.7), border = NA)
+
+YYPI <- pobs$year[pobs$island=="PI"]
+YYPI <- YYPI + c(0.05, rep(-0.05, length(YYPI) - 2), -0.1)
+points(YYPI, pobs_ci[pobs$island=="PI","PointEst"], 
+       col = "cornflowerblue", pch = 15, cex = 1.5)
+segments(x0 = YYPI, y0 = pobs_ci[pobs$island=="PI","Lower"],
+         y1 = pobs_ci[pobs$island=="PI","Upper"], col = "cornflowerblue")
+YYDI <- pobs$year[pobs$island=="DI"]
+YYDI <- YYDI + c(0.1, rep(0.05, length(YYDI) - 2), -0.05)
+points(YYDI, pobs_ci[pobs$island=="DI","PointEst"], 
+       col = "darkgray", pch = 16, cex = 1.5)
+segments(x0 = YYDI, y0 = pobs_ci[pobs$island=="DI","Lower"],
+         y1 = pobs_ci[pobs$island=="DI","Upper"], col = "darkgray")
+
+legend("topleft", c("Protection","Destruction"), lwd = 3, pch = c(15,16), 
+       col = c("cornflowerblue","darkgray"))
+```
+
+
+# GLMMs of Apparent Fledging Success
+
+## Model Fitting and Assessment
+
+Model 1
+
+```{r fit_suc2, eval = refit_suc, echo = FALSE}
+# Inter-island differences, varying among years
+suc2 <- stan_glmer(cbind(last_check, egg - last_check) ~ island + (1 | site) + (island | year),
+                   data =  rhau,
+                   family = binomial(link = logit),
+                   prior = normal(0,5),
+                   prior_intercept = normal(0,5),
+                   prior_covariance = decov(),
+                   chains = 3, iter = 2000, warmup = 1000, cores = 3)
+```
+```{r print_suc2, echo = FALSE}
+suc2
+```
+
+Model 2
+
+```{r fit_suc3, eval = refit_suc, echo = FALSE}
+suc3 <- stan_glmer(cbind(last_check, egg - last_check) ~ island + PC1 + PC2 + (1 | site) + (island | year),
+                   data =  rhau,
+                   family = binomial(link = logit),
+                   prior = normal(0,5),
+                   prior_intercept = normal(0,5),
+                   prior_covariance = decov(),
+                   chains = 3, iter = 2000, warmup = 1000, cores = 3)
+```
+```{r print_suc3, echo = FALSE}
+suc3
+```
+
+Model 3
+
+```{r fit_suc4, eval = refit_suc, echo = FALSE}
+suc4 <- stan_glmer(cbind(last_check, egg - last_check) ~ island + PC1 + PC2 + (1 | site),
+                   data =  rhau,
+                   family = binomial(link = logit),
+                   prior = normal(0,5),
+                   prior_intercept = normal(0,5),
+                   prior_covariance = decov(),
+                   chains = 3, iter = 2000, warmup = 1000, cores = 3)
+```
+```{r print_suc4, echo = FALSE}
+suc4
+```
+
+Marginal posterior predictive density of largest model
+
+```{r plot_ppd, fig.width = 4, fig.height = 4, echo = FALSE}
+## Model validation by graphical posterior predictive checking
+# default plot: marginal distribution of data and posterior predictive distribution
+pp_check(suc3)
+```
+
+## Model Selection
+
+```{r loo_suc, eval = refit_suc, include = FALSE}
+suc_loos <- lapply(list(suc2 = suc2, suc3 = suc3, suc4 = suc4), loo, k_threshold = 0.7)
+```
+```{r loo_suc_compare, echo = FALSE}
+# unpaired comparisons
+suc_compare <- loo_compare(suc_loos)
+print(suc_compare, simplify = FALSE)
+```
+```{r loo_suc_compair, echo = FALSE}
+# pairwise comparisons
+suc_compair <- loo_compair(suc_loos)
+suc_compair
+```
+
+## Plots
+
+We can explore the predictions of the selected model by plotting the posterior distribution of fitted values as time series for each island and comparing them to the sample proportion of occupied burrows (with binomial 95% confidence intervals).
+
+```{r suc_fitted_timeseries, fig.width = 7, height = 7, dpi = 300, out.width = "75%", echo = FALSE}
+## Time series of fitted and observed fledging success at DI and PI
+## (This will take some time to render. For alternate version, 
+## comment out both calls to densregion() and uncomment polygon()).
+par(mar = c(5.1,4.5,1,1))
+
+YY <- sort(unique(rhau$year))
+newdata <- data.frame(year = rep(YY, each = 2), site = "newsite",
+                      island = rep(c("DI","PI"), length(YY)))
+pfit <- posterior_linpred(suc2, transform = TRUE, re.form = ~ (1 | year), newdata = newdata)
+pobs <- aggregate(cbind(egg, last_check) ~ year + island, data = rhau, sum)
+pobs_ci <- binconf(pobs$last_check, n = pobs$egg)
+eval.points <- range(pobs_ci, apply(pfit,2,quantile,c(0.025,0.975)))
+eval.points <- seq(min(eval.points), max(eval.points), length = 300)
+xyDI <- pfit[,newdata$island=="DI"]
+pxyDI <- t(apply(xyDI, 2, function(x) 
+  sm.density(x, eval.points = eval.points, display = "none")$estimate))
+xyPI <- pfit[,newdata$island=="PI"]
+pxPI <- sm.density(as.vector(xyPI), display = "none")
+pxyPI <- t(apply(xyPI, 2, function(x) 
+  sm.density(x, eval.points = eval.points, display = "none")$estimate))
+
+plot(newdata$year[newdata$island=="PI"], apply(pfit[,newdata$island=="PI"],2,median), 
+     las = 1, cex.axis = 1.2, cex.lab = 1.5, type = "l", lwd = 3, col = "cornflowerblue",
+     xlab = "Year", ylab = bquote(italic(P) * "(fledging)"), 
+     ylim = range(pobs_ci, apply(pfit,2,quantile,c(0.025,0.975))), 
+     xaxs = "i", xaxt = "n", yaxs = "i")
+lines(newdata$year[newdata$island=="DI"], apply(pfit[,newdata$island=="DI"],2,median),
+      lwd = 3, col = "darkgray")
+axis(1, at = min(rhau$year):max(rhau$year))
+
+densregion(newdata$year[newdata$island=="PI"], eval.points, pxyPI,
+         colmax = transparent("cornflowerblue",0.1), colmin = "transparent")
+# polygon(c(newdata$year[newdata$island=="PI"], rev(newdata$year[newdata$island=="PI"])),
+#         c(apply(pfit[,newdata$island=="PI"],2,quantile,0.025), 
+#           rev(apply(pfit[,newdata$island=="PI"],2,quantile,0.975))), 
+#         col = transparent("cornflowerblue",0.7), border = NA)
+densregion(newdata$year[newdata$island=="DI"], eval.points, pxyDI,
+          colmax = transparent("darkgray",0.3), colmin = "transparent")
+# polygon(c(newdata$year[newdata$island=="DI"], rev(newdata$year[newdata$island=="DI"])),
+#         c(apply(pfit[,newdata$island=="DI"],2,quantile,0.025), 
+#           rev(apply(pfit[,newdata$island=="DI"],2,quantile,0.975))), 
+#         col = transparent("darkgray",0.7), border = NA)
+
+YYPI <- pobs$year[pobs$island=="PI"]
+YYPI <- YYPI + c(0.05, rep(-0.05, length(YYPI) - 2), -0.1)
+points(YYPI, pobs_ci[pobs$island=="PI","PointEst"], 
+       col = "cornflowerblue", pch = 15, cex = 1.5)
+segments(x0 = YYPI, y0 = pobs_ci[pobs$island=="PI","Lower"],
+         y1 = pobs_ci[pobs$island=="PI","Upper"], col = "cornflowerblue")
+YYDI <- pobs$year[pobs$island=="DI"]
+YYDI <- YYDI + c(0.1, rep(0.05, length(YYDI) - 2), -0.05)
+points(YYDI, pobs_ci[pobs$island=="DI","PointEst"], 
+       col = "darkgray", pch = 16, cex = 1.5)
+segments(x0 = YYDI, y0 = pobs_ci[pobs$island=="DI","Lower"],
+         y1 = pobs_ci[pobs$island=="DI","Upper"], col = "darkgray")
+
+legend("topleft", c("Protection","Destruction"), lwd = 3, pch = c(15,16), 
+       col = c("cornflowerblue","darkgray"))
+
+```
 

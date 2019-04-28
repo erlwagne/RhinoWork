@@ -15,6 +15,7 @@ library(denstrip)
 library(yarrr)
 library(corrplot)
 library(lubridate)
+library(matrixStats)
 library(tidyr)
 library(dplyr)
 source(here::here("analysis","loo_compair.R"))
@@ -370,7 +371,7 @@ newdata <- data.frame(year = rep(YY, each = 2), site = "newsite",
 pfit <- posterior_linpred(occ2, transform = TRUE, re.form = ~ (1 | year), newdata = newdata)
 pobs <- aggregate(cbind(viable, egg) ~ year + island, data = rhau, sum)
 pobs_ci <- binconf(pobs$egg, n = pobs$viable)
-eval.points <- range(pobs_ci, apply(pfit,2,quantile,c(0.025,0.975)))
+eval.points <- range(pobs_ci, colQuantiles(pfit, probs = c(0.025,0.975)))
 eval.points <- seq(min(eval.points), max(eval.points), length = 300)
 xyDI <- pfit[,newdata$island=="DI"]
 pxyDI <- t(apply(xyDI, 2, function(x) 
@@ -389,13 +390,13 @@ lines(newdata$year[newdata$island=="DI"], apply(pfit[,newdata$island=="DI"],2,me
       lwd = 3, col = "darkgray")
 axis(1, at = min(rhau$year):max(rhau$year))
 
-#densregion(newdata$year[newdata$ysland=="PI"], eval.points, pxyPI, 
+# densregion(newdata$year[newdata$island=="PI"], eval.points, pxyPI,
 #          colmax = transparent("darkgray",0.1), colmin = "transparent")
 polygon(c(newdata$year[newdata$island=="PI"], rev(newdata$year[newdata$island=="PI"])),
-        c(apply(pfit[,newdata$island=="PI"],2,quantile,0.025), 
-          rev(apply(pfit[,newdata$island=="PI"],2,quantile,0.975))), 
+        c(apply(pfit[,newdata$island=="PI"],2,quantile,0.025),
+          rev(apply(pfit[,newdata$island=="PI"],2,quantile,0.975))),
         col = transparent("cornflowerblue",0.7), border = NA)
-#densregion(newdata$Year[newdata$Island=="DI"], eval.points, pxyDI, 
+#densregion(newdata$year[newdata$island=="DI"], eval.points, pxyDI, 
 #           colmax = transparent("black",0.3), colmin = "transparent")
 polygon(c(newdata$year[newdata$island=="DI"], rev(newdata$year[newdata$island=="DI"])),
         c(apply(pfit[,newdata$island=="DI"],2,quantile,0.025), 
@@ -559,13 +560,13 @@ lines(newdata$year[newdata$island=="DI"], apply(pfit[,newdata$island=="DI"],2,me
 axis(1, at = min(rhau$year):max(rhau$year))
 
 #densregion(newdata$year[newdata$island=="PI"], eval.points, pxyPI, 
-#          colmax = transparent("darkgray",0.1), colmin = "transparent")
+#          colmax = transparent("cornflowerblue",0.1), colmin = "transparent")
 polygon(c(newdata$year[newdata$island=="PI"], rev(newdata$year[newdata$island=="PI"])),
         c(apply(pfit[,newdata$island=="PI"],2,quantile,0.025), 
           rev(apply(pfit[,newdata$island=="PI"],2,quantile,0.975))), 
         col = transparent("cornflowerblue",0.7), border = NA)
 #densregion(newdata$year[newdata$island=="DI"], eval.points, pxyDI, 
-#           colmax = transparent("black",0.3), colmin = "transparent")
+#           colmax = transparent("darkgray",0.3), colmin = "transparent")
 polygon(c(newdata$year[newdata$island=="DI"], rev(newdata$year[newdata$island=="DI"])),
         c(apply(pfit[,newdata$island=="DI"],2,quantile,0.025), 
           rev(apply(pfit[,newdata$island=="DI"],2,quantile,0.975))), 
