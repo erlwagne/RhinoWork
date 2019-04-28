@@ -19,7 +19,7 @@ output:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(tidy = FALSE, highlight = TRUE, comment = NA, echo = TRUE,
-                      dev = "png", dev.args = list(type = "cairo-png"), fig.align = "center")
+                      dev = "png", dev.args = list(type = "cairo-png"), dpi = 300, out.width = "75%", fig.align = "center")
 
 if(!require(captioner))
   devtools::install_github("adletaw/captioner")
@@ -211,7 +211,7 @@ env_data  %>% mutate_at(vars(pdo_index:chla_PI_spring), list(~round(.,2))) %>% k
 
 Let's explore the patterns of (a)synchrony among the oceanographic indicators to see how severe the multicollinearity might be if they were used as raw regression inputs. 
 
-```{r env_corrplot, fig.height = 7, fig.width = 7, dpi = 200, out.width = "75%", echo = FALSE}
+```{r env_corrplot, fig.height = 7, fig.width = 7, echo = FALSE}
 dat <- select(env_data, c(pdo_index, mei_avg, sst_DI_spring, sst_PI_spring, 
                           cui_spring, st_onset, chla_DI_spring, chla_PI_spring))
 colnames(dat) <- c("PDO","MEI","SST (DI)","SST (PI)","CUI","ST","Chl a (DI)", "Chl a (PI)")
@@ -236,7 +236,7 @@ env_data <- data.frame(env_data, PC1 = scale(scores[,"PC1"]), PC2 = scale(scores
 ## Merge PC1 and PC2 into nest data
 rhau <- left_join(nest_data, select(env_data, c(year, PC1, PC2)))
 ```
-```{r PCA_plots, fig.height = 7, fig.width = 7, dpi = 300, out.width = "75%", echo = FALSE}
+```{r PCA_plots, fig.height = 7, fig.width = 7, echo = FALSE}
 par(mfcol = c(2,2))
 # scree plot
 imp <- summary(pca_env)$importance["Proportion of Variance",]
@@ -255,7 +255,7 @@ text(xloc, par("usr")[3], labels = dimnames(pca_env$rotation)[[1]], adj = c(1,1)
 
 To help interpret the principal components, let's see how they track the time series of oceanographic indicators...
 
-```{r env_timeseries_plots, fig.height = 10, fig.width = 5, dpi = 300, out.width = "50%", echo = FALSE}
+```{r env_timeseries_plots, fig.height = 10, fig.width = 5, out.width = "50%", echo = FALSE}
 ## Time-series plots of indicators and PCs
 par(mfrow = c(7,1), mar = c(1,5,1.2,4.5), oma = c(3,0,0,0))
 vars <- c("pdo_index","mei_avg","sst_DI_spring","sst_PI_spring","cui_spring","st_onset",
@@ -339,7 +339,7 @@ occ4
 
 We can assess the adequacy of the "full" model `occ3` by generating replicate pseudo-data from its posterior predictive distribution and comparing them to the real data...
 
-```{r plot_ppd_occ, fig.width = 4, fig.height = 4, echo = FALSE}
+```{r plot_ppd_occ, fig.width = 4, fig.height = 4, out.width = "40%", echo = FALSE}
 ## Model validation by graphical posterior predictive checking
 # default plot: marginal distribution of data and posterior predictive distribution
 pp_check(occ3)
@@ -373,7 +373,7 @@ save(list = grep("occ", ls(), value = TRUE), file = here::here("analysis","cache
 
 We can explore the predictions of the selected model by plotting the posterior distribution of fitted values as time series for each island and comparing them to the sample proportion of occupied burrows (with binomial 95% confidence intervals).
 
-```{r occ_fitted_timeseries, fig.width = 7, height = 7, dpi = 300, out.width = "75%", echo = FALSE}
+```{r occ_fitted_timeseries, fig.width = 7, height = 7, echo = FALSE}
 ## Time series of fitted and observed fledging success at DI and PI
 ## (This will take some time to render. For alternate version, 
 ## comment out both calls to densregion() and uncomment polygon()).
@@ -487,7 +487,7 @@ suc4
 
 Marginal posterior predictive density of largest model
 
-```{r plot_ppd, fig.width = 4, fig.height = 4, echo = FALSE}
+```{r plot_ppd_suc, fig.width = 4, fig.height = 4, out.width = "40%", echo = FALSE}
 ## Model validation by graphical posterior predictive checking
 # default plot: marginal distribution of data and posterior predictive distribution
 pp_check(suc3)
@@ -513,7 +513,7 @@ suc_compair
 
 We can explore the predictions of the selected model by plotting the posterior distribution of fitted values as time series for each island and comparing them to the sample proportion of occupied burrows (with binomial 95% confidence intervals).
 
-```{r suc_fitted_timeseries, fig.width = 7, height = 7, dpi = 300, out.width = "75%", echo = FALSE}
+```{r suc_fitted_timeseries, fig.width = 7, height = 7, echo = FALSE}
 ## Time series of fitted and observed fledging success at DI and PI
 ## (This will take some time to render. For alternate version, 
 ## comment out both calls to densregion() and uncomment polygon()).
