@@ -346,9 +346,10 @@ We can assess the adequacy of the "full" model `occ3` by generating replicate ps
 ```{r plot_ppd_occ, fig.dim = c(7,5), out.width = "50%", echo = FALSE}
 ## Model validation by graphical posterior predictive checking
 # default plot: marginal distribution of data and posterior predictive distribution
-pp_check(occ3) + theme_bw(base_size = 16) + theme(panel.grid = element_blank()) + 
+pp_check(occ3) + theme_bw(base_size = 16) + 
   labs(x = bquote(italic(P) * "(burrow occupancy)"), y = "Density",
-       title = "Posterior predictive density") + theme(plot.title = element_text(hjust = 0.5))
+       title = "Posterior predictive density") + 
+  theme(panel.grid = element_blank(), plot.title = element_text(hjust = 0.5))
 ```
 
 
@@ -496,10 +497,10 @@ Marginal posterior predictive density of largest model
 ```{r plot_ppd_suc, fig.dim = c(7,5), out.width = "50%", echo = FALSE}
 ## Model validation by graphical posterior predictive checking
 # default plot: marginal distribution of data and posterior predictive distribution
-pp_check(suc3) + theme_bw(base_size = 16) + theme(panel.grid = element_blank()) + 
-  labs(x = bquote(italic(P) * "(fledging)"), y = "Density",
-       title = "Posterior predictive density") + theme(plot.title = element_text(hjust = 0.5))
-
+pp_check(suc3) + theme_bw(base_size = 16) + theme() + 
+  labs(x = bquote(italic(P) * "(fledging)"), y = "Density", 
+       title = "Posterior predictive density") + 
+  theme(panel.grid = element_blank(), plot.title = element_text(hjust = 0.5))
 ```
 
 ## Model Selection

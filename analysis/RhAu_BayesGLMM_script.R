@@ -362,9 +362,10 @@ save(list = grep("occ", ls(), value = TRUE), file = here::here("analysis","cache
 ## Model validation by graphical posterior predictive checking
 # default plot: marginal distribution of data and posterior predictive distribution
 dev.new()
-pp_check(occ3) + theme_bw(base_size = 16) + theme(panel.grid = element_blank()) + 
+pp_check(occ3) + theme_bw(base_size = 16) + 
   labs(x = bquote(italic(P) * "(burrow occupancy)"), y = "Density",
-       title = "Posterior predictive density") + theme(plot.title = element_text(hjust = 0.5))
+       title = "Posterior predictive density") + 
+  theme(panel.grid = element_blank(), plot.title = element_text(hjust = 0.5))
 
 ## Posterior distribution of average between-island difference in full model,
 ## with median and 95% credible interval
@@ -535,9 +536,10 @@ save(list = grep("suc", ls(), value = TRUE), file = here::here("analysis","cache
 ## Model validation by graphical posterior predictive checking
 # default plot: marginal distribution of data and posterior predictive distribution
 dev.new()
-pp_check(suc3) + theme_bw(base_size = 16) + theme(panel.grid = element_blank()) + 
-  labs(x = bquote(italic(P) * "(fledging)"), y = "Density",
-       title = "Posterior predictive density") + theme(plot.title = element_text(hjust = 0.5))
+pp_check(suc3) + theme_bw(base_size = 16) + theme() + 
+  labs(x = bquote(italic(P) * "(fledging)"), y = "Density", 
+       title = "Posterior predictive density") + 
+  theme(panel.grid = element_blank(), plot.title = element_text(hjust = 0.5))
 
 ## Posterior distribution of average between-island difference in full model,
 ## with median and 95% credible interval
