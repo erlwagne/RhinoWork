@@ -229,7 +229,7 @@ pca_env <- prcomp(~ pdo_index + mei_avg + sst_DI_spring + sst_PI_spring +
 # pca_env            # rotation matrix gives the loadings
 summary(pca_env)   # proportion of variance associated with each PC
 ```
-```{r merge_PCs, echo = FALSE}
+```{r merge_PCs, message = FALSE, echo = FALSE}
 ## Add PC1 and PC2 to covariate data
 scores <- predict(pca_env, newdata = env_data)
 env_data <- data.frame(env_data, PC1 = scale(scores[,"PC1"]), PC2 = scale(scores[,"PC2"]))
