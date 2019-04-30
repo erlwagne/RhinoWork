@@ -2,7 +2,7 @@ Reproductive Success of Two Rhinoceros Auklet Colonies in the Salish Sea
 and California Current
 ================
 Eric Wagner, Eric Buhle, …
-2019-04-28
+2019-04-29
 
   - [Overview](#overview)
   - [Setup and data](#setup-and-data)
@@ -88,8 +88,6 @@ inputs.
     Standard deviation     2.0729 1.3625 0.9925 0.61922 0.45791 0.39276 0.26794 0.20679
     Proportion of Variance 0.5371 0.2321 0.1231 0.04793 0.02621 0.01928 0.00897 0.00535
     Cumulative Proportion  0.5371 0.7691 0.8923 0.94019 0.96640 0.98568 0.99465 1.00000
-
-    Joining, by = "year"
 
 <img src="RhAu_BayesGLMM_files/figure-gfm/PCA_plots-1.png" width="75%" style="display: block; margin: auto;" />
 
