@@ -6,6 +6,8 @@ if(.Platform$OS.type == "windows") options(device = windows) else options(device
 library(here)
 library(rstanarm)
 library(bayesplot)
+library(ggplot2)
+library(gridExtra)
 library(Hmisc)
 library(sm)
 library(loo)
@@ -13,8 +15,11 @@ library(denstrip)
 library(yarrr)
 library(corrplot)
 library(lubridate)
+library(matrixStats)
 library(tidyr)
 library(dplyr)
+library(forcats)
+library(lattice)
 source(here::here("analysis","loo_compair.R"))
 
 #--------------------------
@@ -29,52 +34,48 @@ names(nest_data) <- gsub("lastcheck", "last_check", tolower(names(nest_data)))
 # Monthly 1854-2019
 pdo <- read.csv(here::here("data","pdo.timeseries.ersstv3b.csv"), na.strings = "-9999.000")
 colnames(pdo)[2] <- "pdo"
-pdo$Date <- ymd(pdo$Date)
-pdo <- mutate(pdo, year = ifelse(month(Date) > 8, year(Date) + 1, year(Date)),
-              month = month(Date, label = TRUE), Date = NULL)
-pdo <- spread(pdo, month, pdo)
-pdo <- select(pdo, c(year, Sep:Dec, Jan:Aug))
-pdo <- data.frame(pdo, pdo_index = rowMeans(select(pdo, Nov:Mar)))
+pdo <- pdo %>% mutate(Date = ymd(Date), year = ifelse(month(Date) > 8, year(Date) + 1, year(Date)),
+                      month = month(Date, label = TRUE), Date = NULL) %>%
+  spread(month, pdo) %>% select(c(year, Sep:Dec, Jan:Aug))
+pdo <- data.frame(pdo, pdo_index = rowMeans(select(pdo, Nov:Mar))) # incredibly, not easy in dplyr
 
 # MEI v.2 1979-2018
 # Wide format: rows are years, columns are months
 mei <- read.csv(here::here("data","MEIv2.csv"))
-colnames(mei) <- tolower(colnames(mei))
-mei <- gather(mei, months, mei, decjan:novdec)
-mei <- mutate(mei, year = ifelse(months %in% c("sepoct","octnov","novdec"), year + 1, year))
-mei <- spread(mei, months, mei)
-mei <- select(mei, c(year,sepoct,octnov,novdec,decjan,
-                     janfeb,febmar,marapr,aprmay,mayjun,junjul,julaug,augsep))
+colnames(mei) <- tolower(colnames(mei))  # amazingly, also not easy in dplyr
+mei <- mei %>% gather(months, mei, decjan:novdec) %>% 
+  mutate(year = ifelse(months %in% c("sepoct","octnov","novdec"), year + 1, year)) %>% 
+  spread(months, mei) %>% 
+  select(c(year,sepoct,octnov,novdec,decjan,janfeb,febmar,
+           marapr,aprmay,mayjun,junjul,julaug,augsep))
 mei <- data.frame(mei, mei_avg = rowMeans(select(mei, sepoct:augsep)))
 
 # Average monthly SST from DFO stations
 # Wide format: year x month
 sst_amph <- read.csv(here::here("data",grep("Amphitrite", list.files(here::here("data")), 
-                                            value = TRUE)),
-                     skip = 1, na.strings = "99.99")
+                                            value = TRUE)), skip = 1, na.strings = "99.99")
 colnames(sst_amph) <- tolower(colnames(sst_amph))
 sst_amph <- mutate(sst_amph, sst_amph_spring = rowMeans(select(sst_amph, apr:jun)))
 
 sst_race <- read.csv(here::here("data",grep("Race_Rocks", list.files(here::here("data")), 
-                                            value = TRUE)),
-                     skip = 1, na.strings = "99.99")
+                                            value = TRUE)), skip = 1, na.strings = "99.99")
 colnames(sst_race) <- tolower(colnames(sst_race))
-sst_race <- mutate(sst_race, sst_race_spring = rowMeans(select(sst_race, apr:jun)))
+sst_race <- data.frame(sst_race, sst_race_spring = rowMeans(select(sst_race, apr:jun)))
 
 # Coastal Upwelling Index 48N 125W 1946-2018
 # Wide format: rows are years, columns are months
 cui <- read.csv(here::here("data","CoastalUpwellingIndex.csv"))[,-1]
 colnames(cui)[1] <- "year"
-cui <- mutate(cui, cui_spring = rowMeans(select(cui, Apr:Jun)))
+cui <- data.frame(cui, cui_spring = rowMeans(select(cui, Apr:Jun)))
 
 # Biological spring transition from NWFSC Ocean Ecosystem Indicators
 # Long format, 1970-2018
 biol_trans <- read.csv(here::here("data","biological_spring_transition_NWFSC.csv"),
                        skip = 10, na.strings = "Never ", stringsAsFactors = FALSE)
 colnames(biol_trans) <- c("year","st_onset","st_end","st_duration")
-biol_trans <- mutate(biol_trans, st_onset = yday(ydm(paste(year, st_onset, sep = "-"))))
-biol_trans <- mutate(biol_trans, st_onset = replace_na(st_onset, 365), 
-                     st_end = replace_na(st_end, 365))
+biol_trans <- biol_trans %>% 
+  mutate(st_onset = yday(ydm(paste(year, st_onset, sep = "-")))) %>% 
+  mutate(st_onset = replace_na(st_onset, 365), st_end = replace_na(st_end, 365))
 
 # Area-Averaged of Sea Surface Temperature at 11 microns (Day) monthly 4 km [MODIS-Aqua ()
 # at Protection and Destruction Island
@@ -82,35 +83,35 @@ biol_trans <- mutate(biol_trans, st_onset = replace_na(st_onset, 365),
 sst_DI <- read.csv(here::here("data","SST_DI_2002_2019.csv"), skip = 8, 
                    na.strings = "-32767")[,1:2]
 colnames(sst_DI) <- c("date","sst")
-sst_DI$date <- mdy_hm(sst_DI$date)
-sst_DI <- mutate(sst_DI, year = year(date), month = month(date, label = TRUE), date = NULL)
-sst_DI <- spread(sst_DI, month, sst)
-sst_DI <- mutate(sst_DI, sst_DI_spring = rowMeans(select(sst_DI, Apr:Jun)))
+sst_DI <- sst_DI %>% mutate(date = mdy_hm(date), year = year(date), 
+                            month = month(date, label = TRUE), date = NULL) %>% spread(month, sst)
+sst_DI <- data.frame(sst_DI, sst_DI_spring = rowMeans(select(sst_DI, Apr:Jun)))
 
 sst_PI <- read.csv(here::here("data","SST_PI_2002_2019.csv"), skip = 8, 
                    na.strings = "-32767")[,1:2]
 colnames(sst_PI) <- c("date","sst")
-sst_PI$date <- ymd_hms(sst_PI$date)
-sst_PI <- mutate(sst_PI, year = year(date), month = month(date, label = TRUE), date = NULL)
-sst_PI <- spread(sst_PI, month, sst)
-sst_PI <- mutate(sst_PI, sst_PI_spring = rowMeans(select(sst_PI, Apr:Jun)))
+sst_PI <- sst_PI %>% mutate(date = ymd_hms(date), year = year(date), 
+                            month = month(date, label = TRUE), date = NULL) %>% spread(month, sst)
+sst_PI <- data.frame(sst_PI, sst_PI_spring = rowMeans(select(sst_PI, Apr:Jun)))
 
 #  Area-Averaged of Chlorophyll a concentration monthly 4 km [MODIS-Aqua MODISA_L3m_CHL v2018]
 # at Protection and Destruction Island
 # Monthly 2002-2019
-chla_DI <- read.csv(here::here("data","Chla_DI_2002_2019.csv"), skip = 8, na.strings = "-32767")[,1:2]
+chla_DI <- read.csv(here::here("data","Chla_DI_2002_2019.csv"), skip = 8, 
+                    na.strings = "-32767")[,1:2]
 colnames(chla_DI) <- c("date","chla")
-chla_DI$date <- mdy_hm(chla_DI$date)
-chla_DI <- mutate(chla_DI, year = year(date), month = month(date, label = TRUE), date = NULL)
-chla_DI <- spread(chla_DI, month, chla)
-chla_DI <- mutate(chla_DI, chla_DI_spring = rowMeans(select(chla_DI, Apr:Jun)))
+chla_DI <- chla_DI %>% mutate(date = mdy_hm(date), year = year(date), 
+                              month = month(date, label = TRUE), date = NULL) %>% 
+  spread(month, chla)
+chla_DI <- data.frame(chla_DI, chla_DI_spring = rowMeans(select(chla_DI, Apr:Jun)))
 
-chla_PI <- read.csv(here::here("data","Chla_PI_2002_2019.csv"), skip = 8, na.strings = "-32767")[,1:2]
+chla_PI <- read.csv(here::here("data","Chla_PI_2002_2019.csv"), skip = 8, 
+                    na.strings = "-32767")[,1:2]
 colnames(chla_PI) <- c("date","chla")
-chla_PI$date <- mdy_hm(chla_PI$date)
-chla_PI <- mutate(chla_PI, year = year(date), month = month(date, label = TRUE), date = NULL)
-chla_PI <- spread(chla_PI, month, chla)
-chla_PI <- mutate(chla_PI, chla_PI_spring = rowMeans(select(chla_PI, Apr:Jun)))
+chla_PI <- chla_PI %>% mutate(date = mdy_hm(date), year = year(date), 
+                              month = month(date, label = TRUE), date = NULL) %>% 
+  spread(month, chla)
+chla_PI <- data.frame(chla_PI, chla_PI_spring = rowMeans(select(chla_PI, Apr:Jun)))
 
 # Merge covariate data
 env_data <- Reduce(inner_join, list(select(pdo, c(year, pdo_index)), 
@@ -130,17 +131,15 @@ env_data <- Reduce(inner_join, list(select(pdo, c(year, pdo_index)),
 
 ## Correlation plot of indicators
 dat <- select(env_data, c(pdo_index, mei_avg, sst_DI_spring, sst_PI_spring, 
-                          cui_spring, chla_DI_spring, chla_PI_spring, 
-                          st_onset, st_duration))
-# colnames(dat) <- c("SST spring (DI)", "SST spring (PI)", "MEI", "Coastal Upwelling (Spring)", 
-#                    "Spring Transition (Onset)", "PDO Index")
+                          cui_spring, st_onset, chla_DI_spring, chla_PI_spring))
+colnames(dat) <- c("PDO","MEI","SST (DI)","SST (PI)","CUI","ST","Chl a (DI)", "Chl a (PI)")
 dev.new()
 corrplot(cor(dat, use = "pairwise"), method = "ellipse", diag = FALSE)
 
 ## Pairs plot of indicators
 dev.new(width = 12, height = 12)
 pairs(select(env_data, c(pdo_index, mei_avg, sst_DI_spring, sst_PI_spring, 
-                         cui_spring, chla_DI_spring, chla_PI_spring, st_onset, st_duration)), 
+                         cui_spring, st_onset, chla_DI_spring, chla_PI_spring)), 
       gap = 0.2, pch = 16, cex = 1.2, col = transparent("slategray",0.6))
 
 # PCA
@@ -173,6 +172,104 @@ env_data <- data.frame(env_data, PC1 = scale(scores[,"PC1"]), PC2 = scale(scores
 
 ## Merge PC1 and PC2 into nest data
 rhau <- left_join(nest_data, select(env_data, c(year, PC1, PC2)))
+
+## Time-series plots of indicators and PCs
+## ggplot2
+dev.new(width = 7, height = 10)
+pdo.gg <- ggplot(data = env_data, aes(x = year, y = pdo_index)) + geom_line() +
+  labs(x = "", y = "PDO", size = 5) + theme_gray()
+mei.gg <- ggplot(data = env_data, aes(x = year, y = mei_avg)) + geom_line()+
+  labs(x = "", y = "MEI") + theme_gray()
+sstdi.gg <- ggplot(data = env_data, aes(x = year, y = sst_DI_spring)) + geom_line() +
+  labs(x = "", y = "SST (DI)") + theme_gray()
+sstpi.gg <- ggplot(data = env_data, aes(x = year, y = sst_PI_spring)) + geom_line() +
+  labs(x = "", y = "SST (PI)") + theme_gray()
+cui.gg <- ggplot(data = env_data, aes(x = year, y = cui_spring)) + geom_line() +
+  labs(x = "", y = "Coastal Upwelling") + theme_gray()
+sto.gg <- ggplot(data = env_data, aes(x = year, y = st_onset)) + geom_line() +
+  labs(x = "", y = "Spring Transition (d)") + theme_gray()
+chldi.gg <- ggplot(data = env_data, aes(x = year, y = chla_DI_spring)) + geom_line() +
+  labs(x = "", y = "Chl a (DI)") + theme_gray()
+chlpi.gg <- ggplot(data = env_data, aes(x = year, y = chla_PI_spring)) + geom_line() +
+  labs(x = "", y = "Chl a (PI)") + theme_gray()
+pc1.gg <- ggplot(data = env_data, aes(x = year, y = PC1)) + geom_line() +
+  labs(x = "Year", y = "PC1") + theme_gray()
+pc2.gg <- ggplot(data = env_data, aes(x = year, y = PC2)) + geom_line() +
+  labs(x = "Year", y = "PC2") + theme_gray()
+grid.arrange(pdo.gg, mei.gg, sstdi.gg, sstpi.gg, cui.gg, sto.gg, chldi.gg, chlpi.gg, pc1.gg, pc2.gg,
+             nrow = 5, ncol = 2)
+
+# simpler ggplot2
+dev.new(width = 7, height = 10)
+env_data %>% select(-c(sst_amph_spring, sst_race_spring, st_duration)) %>% 
+  gather("variable", "value", -year) %>% 
+  mutate(variable = factor(variable, 
+                           levels = c("pdo_index","mei_avg","sst_DI_spring","sst_PI_spring",
+                                      "cui_spring","st_onset","chla_DI_spring","chla_PI_spring",
+                                      "PC1","PC2"),
+                           labels = c("PDO","MEI","SST (DI)","SST (PI)","CUI","ST",
+                                      "Chl a (DI)","Chl a (PI)","PC1","PC2"))) %>% 
+  ggplot(aes(year, value)) + geom_line() + facet_wrap(~ variable, ncol = 2, scales = "free") + 
+  theme_bw() + labs(x = "Year")
+
+# same thing is actually simpler (and much faster) in lattice 
+# (also, default x-gridlines don't include non-integer years as in ggplot2)
+dev.new(width = 7, height = 10)
+env_data %>% select(-c(sst_amph_spring, sst_race_spring, st_duration)) %>% 
+  gather("variable", "value", -year) %>% 
+  mutate(variable = factor(variable, 
+                           levels = c("pdo_index","mei_avg","sst_DI_spring","sst_PI_spring",
+                                      "cui_spring","st_onset","chla_DI_spring","chla_PI_spring",
+                                      "PC1","PC2"),
+                           labels = c("PDO","MEI","SST (DI)","SST (PI)","CUI","ST",
+                                      "Chl a (DI)","Chl a (PI)","PC1","PC2"))) %>% 
+  xyplot(value ~ year | variable, data = ., type = c("l","g"), xlab = "Year", 
+         scales = list(relation = "free", rot = 0), layout = c(2,5), as.table = TRUE)
+
+# base graphics
+dev.new(width = 8, height = 10)
+par(mfrow = c(5,2), mar = c(2,5,1,1), oma = c(3,0,0,0))
+vars <- c("pdo_index","mei_avg","sst_DI_spring","sst_PI_spring","cui_spring","st_onset",
+  "chla_DI_spring","chla_PI_spring","PC1","PC2")
+ylabs <- c("PDO","MEI","SST (DI)", "SST (PI)", "Coastal upwelling", "Spring transition (d)",
+           bquote("Chl " * italic(a) * " (DI)"), bquote("Chl " * italic(a) * " (PI)"), "PC1", "PC2")
+for(i in 1:length(vars)) {
+  plot(env_data$year, env_data[,vars[i]], pch = "", las = 1, cex.lab = 1.5, cex.axis = 1,
+       xlab = "", ylab = ylabs[i], xpd = NA)
+  mtext(ifelse(par("mfg")[1] == 5, "Year", ""), side = 1, line = 3, cex = 1.5*par("cex"))
+  # grid(nx = NA, ny = NULL, col = "lightgray", lty = 1)
+  abline(v = env_data$year, col = "lightgray")
+  rug(env_data$year[env_data$year %% 5 != 0], ticksize = -0.04)
+  lines(env_data$year, env_data[,vars[i]], type = "l", lwd = 2)
+}
+
+# much nicer base graphics
+dev.new(width = 5, height = 10)
+par(mfrow = c(7,1), mar = c(1,5,1.2,4.5), oma = c(3,0,0,0))
+vars <- c("pdo_index","mei_avg","sst_DI_spring","sst_PI_spring","cui_spring","st_onset",
+          "chla_DI_spring","chla_PI_spring","PC1","PC2")
+cols <- c("purple","red","darkred","salmon","darkblue","SpringGreen","darkgreen","lightgreen",
+          "black","darkgray")
+mfgs <- c(1,2,3,3,4,5,6,6,7,7)
+ylabs <- c("PDO","MEI",bquote("SST (" * degree * "C)"), "CUI", "ST", 
+           bquote("Chl " * italic(a) * " (mg/m" ^3 * ")"), "PC")
+for(i in unique(mfgs)) {
+  plot(env_data$year, env_data[,vars[match(i,mfgs)]], type = "l", lwd = 2, col = cols[match(i,mfgs)], 
+       cex.axis = 1.2, cex.lab = 1.5, xlab = "", ylab = ylabs[i], 
+       ylim = range(env_data[,vars[which(mfgs == i)]], na.rm = TRUE), 
+       yaxt = "n", bty = "n")
+  axis(side = 1, at = env_data$year[env_data$year %% 5 != 0], labels = FALSE, cex.axis = 1.2)
+  ytck <- axisTicks(par("usr")[3:4], log = FALSE, nint = 3)
+  axis(side = 2, at = ytck, las = 1, cex.axis = 1.2,
+       labels = if(ylabs[[i]] == "ST") month(as_date(ytck), label = TRUE, abbr = TRUE) else ytck)
+  mtext(ifelse(par("mfg")[1] == 7, "Year", ""), side = 1, line = 3, cex = 1.5*par("cex"))
+  if(sum(mfgs == i) == 2) {
+    lines(env_data$year, env_data[,vars[which(mfgs==i)[2]]], lwd = 2, col = cols[which(mfgs==i)[2]])
+    legend("right", legend = if(ylabs[i] == "PC") 1:2 else c("DI","PI"), 
+           inset = c(-0.2,0), xpd = TRUE, lwd = 2, col = cols[which(mfgs == i)], bty = "n")
+  }
+}
+
 
 #---------------------------------
 # GLMMs
@@ -264,7 +361,11 @@ save(list = grep("occ", ls(), value = TRUE), file = here::here("analysis","cache
 
 ## Model validation by graphical posterior predictive checking
 # default plot: marginal distribution of data and posterior predictive distribution
-pp_check(occ3)
+dev.new()
+pp_check(occ3) + theme_bw(base_size = 16) + 
+  labs(x = bquote(italic(P) * "(burrow occupancy)"), y = "Density",
+       title = "Posterior predictive density") + 
+  theme(panel.grid = element_blank(), plot.title = element_text(hjust = 0.5))
 
 ## Posterior distribution of average between-island difference in full model,
 ## with median and 95% credible interval
@@ -299,7 +400,7 @@ newdata <- data.frame(year = rep(YY, each = 2), site = "newsite",
 pfit <- posterior_linpred(occ2, transform = TRUE, re.form = ~ (1 | year), newdata = newdata)
 pobs <- aggregate(cbind(viable, egg) ~ year + island, data = rhau, sum)
 pobs_ci <- binconf(pobs$egg, n = pobs$viable)
-eval.points <- range(pobs_ci, apply(pfit,2,quantile,c(0.025,0.975)))
+eval.points <- range(pobs_ci, colQuantiles(pfit, probs = c(0.025,0.975)))
 eval.points <- seq(min(eval.points), max(eval.points), length = 300)
 xyDI <- pfit[,newdata$island=="DI"]
 pxyDI <- t(apply(xyDI, 2, function(x) 
@@ -318,13 +419,13 @@ lines(newdata$year[newdata$island=="DI"], apply(pfit[,newdata$island=="DI"],2,me
       lwd = 3, col = "darkgray")
 axis(1, at = min(rhau$year):max(rhau$year))
 
-#densregion(newdata$year[newdata$ysland=="PI"], eval.points, pxyPI, 
+# densregion(newdata$year[newdata$island=="PI"], eval.points, pxyPI,
 #          colmax = transparent("darkgray",0.1), colmin = "transparent")
 polygon(c(newdata$year[newdata$island=="PI"], rev(newdata$year[newdata$island=="PI"])),
-        c(apply(pfit[,newdata$island=="PI"],2,quantile,0.025), 
-          rev(apply(pfit[,newdata$island=="PI"],2,quantile,0.975))), 
+        c(apply(pfit[,newdata$island=="PI"],2,quantile,0.025),
+          rev(apply(pfit[,newdata$island=="PI"],2,quantile,0.975))),
         col = transparent("cornflowerblue",0.7), border = NA)
-#densregion(newdata$Year[newdata$Island=="DI"], eval.points, pxyDI, 
+#densregion(newdata$year[newdata$island=="DI"], eval.points, pxyDI, 
 #           colmax = transparent("black",0.3), colmin = "transparent")
 polygon(c(newdata$year[newdata$island=="DI"], rev(newdata$year[newdata$island=="DI"])),
         c(apply(pfit[,newdata$island=="DI"],2,quantile,0.025), 
@@ -413,8 +514,7 @@ summary(suc4, prob = c(0.025,0.5,0.975), digits = 2)
 launch_shinystan(suc4)
 
 ## Model selection by approximate leave-one-out cross-validation
-## Model selection by approximate leave-one-out cross-validation
-suc_loos <-  lapply(list(suc0 = suc0, suc1 = suc1, suc2 = suc2, suc3 = suc3, suc4 = suc4), 
+suc_loos <- lapply(list(suc0 = suc0, suc1 = suc1, suc2 = suc2, suc3 = suc3, suc4 = suc4), 
                     loo, k_threshold = 0.7)
 suc_loos
 
@@ -435,7 +535,11 @@ save(list = grep("suc", ls(), value = TRUE), file = here::here("analysis","cache
 
 ## Model validation by graphical posterior predictive checking
 # default plot: marginal distribution of data and posterior predictive distribution
-pp_check(suc2)
+dev.new()
+pp_check(suc3) + theme_bw(base_size = 16) + theme() + 
+  labs(x = bquote(italic(P) * "(fledging)"), y = "Density", 
+       title = "Posterior predictive density") + 
+  theme(panel.grid = element_blank(), plot.title = element_text(hjust = 0.5))
 
 ## Posterior distribution of average between-island difference in full model,
 ## with median and 95% credible interval
@@ -489,13 +593,13 @@ lines(newdata$year[newdata$island=="DI"], apply(pfit[,newdata$island=="DI"],2,me
 axis(1, at = min(rhau$year):max(rhau$year))
 
 #densregion(newdata$year[newdata$island=="PI"], eval.points, pxyPI, 
-#          colmax = transparent("darkgray",0.1), colmin = "transparent")
+#          colmax = transparent("cornflowerblue",0.1), colmin = "transparent")
 polygon(c(newdata$year[newdata$island=="PI"], rev(newdata$year[newdata$island=="PI"])),
         c(apply(pfit[,newdata$island=="PI"],2,quantile,0.025), 
           rev(apply(pfit[,newdata$island=="PI"],2,quantile,0.975))), 
         col = transparent("cornflowerblue",0.7), border = NA)
 #densregion(newdata$year[newdata$island=="DI"], eval.points, pxyDI, 
-#           colmax = transparent("black",0.3), colmin = "transparent")
+#           colmax = transparent("darkgray",0.3), colmin = "transparent")
 polygon(c(newdata$year[newdata$island=="DI"], rev(newdata$year[newdata$island=="DI"])),
         c(apply(pfit[,newdata$island=="DI"],2,quantile,0.025), 
           rev(apply(pfit[,newdata$island=="DI"],2,quantile,0.975))), 

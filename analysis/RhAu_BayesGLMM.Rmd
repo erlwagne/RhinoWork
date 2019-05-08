@@ -1,21 +1,27 @@
 ---
-title: Nest Success of Two Rhinoceros Auklet Colonies in the Salish Sea and California
+title: Reproductive Success of Two Rhinoceros Auklet Colonies in the Salish Sea and California
   Current
 author: "Eric Wagner, Eric Buhle, ..."
-date: "April 21, 2019"
+date: "`r format(Sys.Date())`"
 output:
+  github_document:
+    toc: true
+    toc_depth: 3
   html_document:
     df_print: paged
     fig_caption: yes
     toc: yes
     toc_float: yes
+    code_folding: hide
   word_document:
     toc: yes
+always_allow_html: yes
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(tidy = FALSE, highlight = TRUE, comment = NA, 
-                      dev = "png", dev.args = list(type = "cairo-png"))
+knitr::opts_chunk$set(tidy = FALSE, highlight = TRUE, comment = NA, echo = TRUE,
+                      dev = "png", dev.args = list(type = "cairo-png"), dpi = 300, 
+                      out.width = "75%", fig.align = "center")
 
 if(!require(captioner))
   devtools::install_github("adletaw/captioner")
@@ -31,42 +37,65 @@ options(width = 130)
 
 This is a Rhinoceros Auklet from the Protection Island colony:
 
-![](https://www.eopugetsound.org/sites/default/files/styles/magazinewidth_592px/public/topical_articles/images/16343412270_5cfaa5c480_o.jpg?itok=WjzI1_2K)
+```{r auklet_image, fig.align = "left", out.width = "50%", echo = FALSE}
+knitr::include_graphics("https://www.eopugetsound.org/sites/default/files/styles/magazinewidth_592px/public/topical_articles/images/16343412270_5cfaa5c480_o.jpg?itok=WjzI1_2K")
+```
+
+
+[Cap'n: Add elegant prose about the study system, questions, and brief methods here; add subsections if desired]
 
 # Setup and data
 
-First we load the libraries we'll use.
+First we load the libraries and functions we'll use.
 
-```{r getting_started, message = FALSE, warning = FALSE}
+```{r getting_started, include = FALSE, message = FALSE, warning = FALSE}
 if(!require(here)) install.packages("here::here")
 library(here)
-if(!require(rstanarm)) install.package("rstanarm")
+if(!require(rstanarm)) install.packages("rstanarm")
 library(rstanarm)
-if(!require(bayesplot)) install.package("bayesplot")
+if(!require(bayesplot)) install.packages("bayesplot")
 library(bayesplot)
-if(!require(Hmisc)) install.package("Hmisc")
+if(!require(Hmisc)) install.packages("Hmisc")
 library(Hmisc)
-if(!require(sm)) install.package("sm")
+if(!require(sm)) install.packages("sm")
 library(sm)
-if(!require(loo)) install.package("loo")
+if(!require(loo)) install.packages("loo")
 library(loo)
-if(!require(denstrip)) install.package("denstrip")
+if(!require(denstrip)) install.packages("denstrip")
 library(denstrip)
-if(!require(yarrr)) install.package("yarrr")
+if(!require(yarrr)) install.packages("yarrr")
 library(yarrr)
-if(!require(corrplot)) install.package("corrplot")
+if(!require(corrplot)) install.packages("corrplot")
 library(corrplot)
-if(!require(lubridate)) install.package("lubridate")
+if(!require(matrixStats)) install.packages("corrplot")
+library(matrixStats)
+if(!require(lubridate)) install.packages("lubridate")
 library(lubridate)
-if(!require(tidyr)) install.package("tidyr")
+if(!require(tidyr)) install.packages("tidyr")
 library(tidyr)
-if(!require(dplyr)) install.package("dplyr")
+if(!require(dplyr)) install.packages("dplyr")
 library(dplyr)
+if(!require(gridExtra)) install.packages("gridExtra")
+library(kableExtra)
+if(!require(kableExtra)) install.packages("kableExtra")
+library(kableExtra)
+source(here::here("analysis","loo_compair.R"))
+```
+
+```{r load_saved_objects, include = FALSE}
+if(file.exists(here::here("analysis","cache","occ_stanfit_loo.RData"))) {
+  load(here::here("analysis","cache","occ_stanfit_loo.RData"))
+  refit_occ <- FALSE
+} else refit_occ <- TRUE
+if(file.exists(here::here("analysis","cache","suc_stanfit_loo.RData"))) {
+  load(here::here("analysis","cache","suc_stanfit_loo.RData"))
+  refit_suc <- FALSE
+} else refit_suc <- TRUE
 ```
 
 Next we'll read in the datasets from various sources and manipulate them into a usable format.
 
-```{r data, eval = FALSE}
+```{r data, include = FALSE, message = FALSE, warning = FALSE}
 # Nest success data
 nest_data <- read.csv(here::here("data","RhAu2.csv"), fileEncoding="UTF-8-BOM")
 names(nest_data) <- gsub("lastcheck", "last_check", tolower(names(nest_data)))
@@ -75,23 +104,48 @@ names(nest_data) <- gsub("lastcheck", "last_check", tolower(names(nest_data)))
 # Monthly 1854-2019
 pdo <- read.csv(here::here("data","pdo.timeseries.ersstv3b.csv"), na.strings = "-9999.000")
 colnames(pdo)[2] <- "pdo"
-pdo$Date <- ymd(pdo$Date)
-pdo <- mutate(pdo, year = ifelse(month(Date) > 8, year(Date) + 1, year(Date)),
-              month = month(Date, label = TRUE), Date = NULL)
-pdo <- spread(pdo, month, pdo)
-pdo <- select(pdo, c(year, Sep:Dec, Jan:Aug))
-pdo <- data.frame(pdo, pdo_index = rowMeans(select(pdo, Nov:Mar)))
+pdo <- pdo %>% mutate(Date = ymd(Date), year = ifelse(month(Date) > 8, year(Date) + 1, year(Date)),
+                      month = month(Date, label = TRUE), Date = NULL) %>%
+  spread(month, pdo) %>% select(c(year, Sep:Dec, Jan:Aug))
+pdo <- data.frame(pdo, pdo_index = rowMeans(select(pdo, Nov:Mar))) # incredibly, not easy in dplyr
 
 # MEI v.2 1979-2018
 # Wide format: rows are years, columns are months
 mei <- read.csv(here::here("data","MEIv2.csv"))
-colnames(mei) <- tolower(colnames(mei))
-mei <- gather(mei, months, mei, decjan:novdec)
-mei <- mutate(mei, year = ifelse(months %in% c("sepoct","octnov","novdec"), year + 1, year))
-mei <- spread(mei, months, mei)
-mei <- select(mei, c(year,sepoct,octnov,novdec,decjan,
-                     janfeb,febmar,marapr,aprmay,mayjun,junjul,julaug,augsep))
+colnames(mei) <- tolower(colnames(mei))  # amazingly, also not easy in dplyr
+mei <- mei %>% gather(months, mei, decjan:novdec) %>% 
+  mutate(year = ifelse(months %in% c("sepoct","octnov","novdec"), year + 1, year)) %>% 
+  spread(months, mei) %>% 
+  select(c(year,sepoct,octnov,novdec,decjan,janfeb,febmar,
+           marapr,aprmay,mayjun,junjul,julaug,augsep))
 mei <- data.frame(mei, mei_avg = rowMeans(select(mei, sepoct:augsep)))
+
+# Average monthly SST from DFO stations
+# Wide format: year x month
+sst_amph <- read.csv(here::here("data",grep("Amphitrite", list.files(here::here("data")), 
+                                            value = TRUE)), skip = 1, na.strings = "99.99")
+colnames(sst_amph) <- tolower(colnames(sst_amph))
+sst_amph <- mutate(sst_amph, sst_amph_spring = rowMeans(select(sst_amph, apr:jun)))
+
+sst_race <- read.csv(here::here("data",grep("Race_Rocks", list.files(here::here("data")), 
+                                            value = TRUE)), skip = 1, na.strings = "99.99")
+colnames(sst_race) <- tolower(colnames(sst_race))
+sst_race <- data.frame(sst_race, sst_race_spring = rowMeans(select(sst_race, apr:jun)))
+
+# Coastal Upwelling Index 48N 125W 1946-2018
+# Wide format: rows are years, columns are months
+cui <- read.csv(here::here("data","CoastalUpwellingIndex.csv"))[,-1]
+colnames(cui)[1] <- "year"
+cui <- data.frame(cui, cui_spring = rowMeans(select(cui, Apr:Jun)))
+
+# Biological spring transition from NWFSC Ocean Ecosystem Indicators
+# Long format, 1970-2018
+biol_trans <- read.csv(here::here("data","biological_spring_transition_NWFSC.csv"),
+                       skip = 10, na.strings = "Never ", stringsAsFactors = FALSE)
+colnames(biol_trans) <- c("year","st_onset","st_end","st_duration")
+biol_trans <- biol_trans %>% 
+  mutate(st_onset = yday(ydm(paste(year, st_onset, sep = "-")))) %>% 
+  mutate(st_onset = replace_na(st_onset, 365), st_end = replace_na(st_end, 365))
 
 # Area-Averaged of Sea Surface Temperature at 11 microns (Day) monthly 4 km [MODIS-Aqua ()
 # at Protection and Destruction Island
@@ -99,62 +153,435 @@ mei <- data.frame(mei, mei_avg = rowMeans(select(mei, sepoct:augsep)))
 sst_DI <- read.csv(here::here("data","SST_DI_2002_2019.csv"), skip = 8, 
                    na.strings = "-32767")[,1:2]
 colnames(sst_DI) <- c("date","sst")
-sst_DI$date <- mdy_hm(sst_DI$date)
-sst_DI <- mutate(sst_DI, year = year(date), month = month(date, label = TRUE), date = NULL)
-sst_DI <- spread(sst_DI, month, sst)
-sst_DI <- mutate(sst_DI, sst_DI_spring = rowMeans(select(sst_DI, Apr:Jun)),
-                 sst_DI_summer = rowMeans(select(sst_DI, Jul:Aug)))
+sst_DI <- sst_DI %>% mutate(date = mdy_hm(date), year = year(date), 
+                            month = month(date, label = TRUE), date = NULL) %>% spread(month, sst)
+sst_DI <- data.frame(sst_DI, sst_DI_spring = rowMeans(select(sst_DI, Apr:Jun)))
 
 sst_PI <- read.csv(here::here("data","SST_PI_2002_2019.csv"), skip = 8, 
                    na.strings = "-32767")[,1:2]
 colnames(sst_PI) <- c("date","sst")
-sst_PI$date <- ymd_hms(sst_PI$date)
-sst_PI <- mutate(sst_PI, year = year(date), month = month(date, label = TRUE), date = NULL)
-sst_PI <- spread(sst_PI, month, sst)
-sst_PI <- mutate(sst_PI, sst_PI_spring = rowMeans(select(sst_PI, Apr:Jun)), 
-                 sst_PI_summer = rowMeans(select(sst_PI, Jul:Aug)))
+sst_PI <- sst_PI %>% mutate(date = ymd_hms(date), year = year(date), 
+                            month = month(date, label = TRUE), date = NULL) %>% spread(month, sst)
+sst_PI <- data.frame(sst_PI, sst_PI_spring = rowMeans(select(sst_PI, Apr:Jun)))
 
-# Average monthly SST from DFO stations
-# Wide format: year x month
-sst_amph <- read.csv(here::here("data",grep("Amphitrite", list.files(here::here("data")), 
-                                            value = TRUE)),
-                     skip = 1, na.strings = "99.99")
-colnames(sst_amph) <- tolower(colnames(sst_amph))
-sst_amph <- mutate(sst_amph, sst_amph_spring = rowMeans(select(sst_amph, apr:jun)),
-                   sst_amph_summer = rowMeans(select(sst_amph, jul:aug)))
+#  Area-Averaged of Chlorophyll a concentration monthly 4 km [MODIS-Aqua MODISA_L3m_CHL v2018]
+# at Protection and Destruction Island
+# Monthly 2002-2019
+chla_DI <- read.csv(here::here("data","Chla_DI_2002_2019.csv"), skip = 8, 
+                    na.strings = "-32767")[,1:2]
+colnames(chla_DI) <- c("date","chla")
+chla_DI <- chla_DI %>% mutate(date = mdy_hm(date), year = year(date), 
+                              month = month(date, label = TRUE), date = NULL) %>% 
+  spread(month, chla)
+chla_DI <- data.frame(chla_DI, chla_DI_spring = rowMeans(select(chla_DI, Apr:Jun)))
 
-sst_race <- read.csv(here::here("data",grep("Race_Rocks", list.files(here::here("data")), 
-                                            value = TRUE)),
-                     skip = 1, na.strings = "99.99")
-colnames(sst_race) <- tolower(colnames(sst_race))
-sst_race <- mutate(sst_race, sst_race_spring = rowMeans(select(sst_race, apr:jun)),
-                   sst_race_summer = rowMeans(select(sst_race, jul:aug)))
-
-# Coastal Upwelling Index 48N 125W 1946-2018
-# Wide format: rows are years, columns are months
-cui <- read.csv(here::here("data","CoastalUpwellingIndex.csv"))[,-1]
-colnames(cui)[1] <- "year"
-cui <- mutate(cui, cui_spring = rowMeans(select(cui, Apr:Jun)), 
-              cui_summer = rowMeans(select(cui, Jul:Aug)))
-
-# Biological spring transition from NWFSC Ocean Ecosystem Indicators
-# Long format, 1970-2018
-biol_trans <- read.csv(here::here("data","biological_spring_transition_NWFSC.csv"),
-                       skip = 10, na.strings = "Never ", stringsAsFactors = FALSE)
-colnames(biol_trans) <- c("year","st_onset","st_end","st_duration")
-biol_trans <- mutate(biol_trans, st_onset = yday(ydm(paste(year, st_onset, sep = "-"))))
-biol_trans <- mutate(biol_trans, st_onset = replace_na(st_onset, 365), 
-                     st_end = replace_na(st_end, 365))
+chla_PI <- read.csv(here::here("data","Chla_PI_2002_2019.csv"), skip = 8, 
+                    na.strings = "-32767")[,1:2]
+colnames(chla_PI) <- c("date","chla")
+chla_PI <- chla_PI %>% mutate(date = mdy_hm(date), year = year(date), 
+                              month = month(date, label = TRUE), date = NULL) %>% 
+  spread(month, chla)
+chla_PI <- data.frame(chla_PI, chla_PI_spring = rowMeans(select(chla_PI, Apr:Jun)))
 
 # Merge covariate data
 env_data <- Reduce(inner_join, list(select(pdo, c(year, pdo_index)), 
                                     select(mei, c(year, mei_avg)), 
-                                    select(sst_DI, c(year, sst_DI_spring, sst_DI_summer)), 
-                                    select(sst_PI, c(year, sst_PI_spring, sst_PI_summer)),
-                                    select(sst_amph, c(year, sst_amph_spring, sst_amph_summer)),
-                                    select(sst_race, c(year, sst_race_spring, sst_race_summer)),
-                                    select(cui, c(year, cui_spring, cui_summer)),
+                                    select(sst_DI, c(year, sst_DI_spring)), 
+                                    select(sst_PI, c(year, sst_PI_spring)),
+                                    select(sst_amph, c(year, sst_amph_spring)),
+                                    select(sst_race, c(year, sst_race_spring)),
+                                    select(cui, c(year, cui_spring)),
+                                    select(chla_DI, c(year, chla_DI_spring)),
+                                    select(chla_PI, c(year, chla_PI_spring)),
                                     select(biol_trans, c(year, st_onset, st_duration))))
 ```
 
+Let's take a look at the nest data...
+
+```{r show_nest, echo = FALSE, warning = FALSE}
+nest_data %>% head() %>% kable(format = "markdown") %>% kable_styling(bootstrap_options = c("striped","hover","condensed"))
+```
+
+And here are the environmental covariates (describe oceanographic indicators)...
+
+```{r show_env, echo = FALSE, warning = FALSE}
+env_data %>% kable(format = "markdown", digits = 2) %>% kable_styling(bootstrap_options = c("striped","hover","condensed"))
+```
+
+# Principal Components Analysis of Oceanographic Indicators
+
+Let's explore the patterns of (a)synchrony among the oceanographic indicators to see how severe the multicollinearity might be if they were used as raw regression inputs. 
+
+```{r env_corrplot, fig.dim = c(7,7), out.width = "50%", echo = FALSE}
+dat <- select(env_data, c(pdo_index, mei_avg, sst_DI_spring, sst_PI_spring, 
+                          cui_spring, st_onset, chla_DI_spring, chla_PI_spring))
+colnames(dat) <- c("PDO","MEI","SST (DI)","SST (PI)","CUI","ST","Chl a (DI)", "Chl a (PI)")
+corrplot(cor(dat, use = "pairwise"), method = "ellipse", diag = FALSE, tl.col = "black", tl.cex = 1.5, cl.cex = 1.2)
+```
+
+Now we perform a principal components analysis to extract the major trends in the suite of oceanographic indicators for use as regression inputs.
+
+```{r PCA, message = FALSE, echo = FALSE}
+pca_env <- prcomp(~ pdo_index + mei_avg + sst_DI_spring + sst_PI_spring + 
+                    cui_spring + st_onset + chla_DI_spring + chla_PI_spring, 
+                  data = env_data, scale = TRUE)
+
+# pca_env            # rotation matrix gives the loadings
+summary(pca_env)   # proportion of variance associated with each PC
+```
+```{r merge_PCs, message = FALSE, echo = FALSE}
+## Add PC1 and PC2 to covariate data
+scores <- predict(pca_env, newdata = env_data)
+env_data <- data.frame(env_data, PC1 = scale(scores[,"PC1"]), PC2 = scale(scores[,"PC2"]))
+
+## Merge PC1 and PC2 into nest data
+rhau <- left_join(nest_data, select(env_data, c(year, PC1, PC2)))
+```
+```{r PCA_plots, fig.dim =c(7,7), echo = FALSE}
+par(mfcol = c(2,2))
+labs <- c("PDO","MEI","SST (DI)","SST (PI)","CUI","ST","Chl a (DI)","Chl a (PI)")
+names(labs) <- c("pdo_index","mei_avg","sst_DI_spring","sst_PI_spring","cui_spring","st_onset",
+          "chla_DI_spring","chla_PI_spring")
+# scree plot
+imp <- summary(pca_env)$importance["Proportion of Variance",]
+barplot(imp, xlab = "", ylab = "Proportion of variance", names.arg = names(imp))   
+# biplot of PCAs and oceanographic indicators
+biplot(pca_env, ylabs = labs[dimnames(pca_env$rotation)[[1]]]) 
+# PC1 loadings
+xloc <- barplot(pca_env$rotation[,"PC1"], xaxt = "n", main = "PC1 loadings")
+text(xloc, par("usr")[3], labels = labs[dimnames(pca_env$rotation)[[1]]], adj = c(1,1), srt = 45, 
+     xpd = TRUE)
+# PC2 loadings
+xloc <- barplot(pca_env$rotation[,"PC2"], xaxt = "n", main = "PC2 loadings")
+text(xloc, par("usr")[3], labels = labs[dimnames(pca_env$rotation)[[1]]], adj = c(1,1), srt = 45, 
+     xpd = TRUE)
+```
+
+To help interpret the principal components, let's see how they track the time series of oceanographic indicators...
+
+```{r env_timeseries_plots, fig.dim = c(5,10), out.width = "50%", echo = FALSE}
+## Time-series plots of indicators and PCs
+par(mfrow = c(7,1), mar = c(1,5,1.2,4.5), oma = c(3,0,0,0))
+vars <- c("pdo_index","mei_avg","sst_DI_spring","sst_PI_spring","cui_spring","st_onset",
+          "chla_DI_spring","chla_PI_spring","PC1","PC2")
+cols <- c("purple","red","darkred","salmon","darkblue","SpringGreen","darkgreen","lightgreen",
+          "black","darkgray")
+mfgs <- c(1,2,3,3,4,5,6,6,7,7)
+ylabs <- c("PDO","MEI",bquote("SST (" * degree * "C)"), "CUI", "ST", 
+           bquote("Chl " * italic(a) * " (mg/m" ^3 * ")"), "PC")
+for(i in unique(mfgs)) {
+  plot(env_data$year, env_data[,vars[match(i,mfgs)]], type = "l", lwd = 2, col = cols[match(i,mfgs)], 
+       cex.axis = 1.2, cex.lab = 1.5, xlab = "", ylab = ylabs[i], 
+       ylim = range(env_data[,vars[which(mfgs == i)]], na.rm = TRUE), 
+       yaxt = "n", bty = "n")
+  axis(side = 1, at = env_data$year[env_data$year %% 5 != 0], labels = FALSE, cex.axis = 1.2)
+  ytck <- axisTicks(par("usr")[3:4], log = FALSE, nint = 3)
+  axis(side = 2, at = ytck, las = 1, cex.axis = 1.2,
+       labels = if(ylabs[[i]] == "ST") month(as_date(ytck), label = TRUE, abbr = TRUE) else ytck)
+  mtext(ifelse(par("mfg")[1] == 7, "Year", ""), side = 1, line = 3, cex = 1.5*par("cex"))
+  if(sum(mfgs == i) == 2) {
+    lines(env_data$year, env_data[,vars[which(mfgs==i)[2]]], lwd = 2, col = cols[which(mfgs==i)[2]])
+    legend("right", legend = if(ylabs[i] == "PC") 1:2 else c("DI","PI"), 
+           inset = c(-0.15,0), xpd = TRUE, lwd = 2, col = cols[which(mfgs == i)], bty = "n")
+  }
+}
+```
+
+# GLMMs of Burrow Occupancy
+
+## Model Fitting and Assessment
+
+Now we are ready to start fitting some GLMMs to the burrow occupancy data...[more on modeling, explanations of each model (starting with model 2 as a baseline description of all known variance components in the study design)]
+
+Model 1
+
+```{r fit_occ2, eval = refit_occ, echo = FALSE}
+# Inter-island differences, varying among years
+occ2 <- stan_glmer(cbind(egg, viable - egg) ~ island + (1 | site) + (island | year),
+                   data =  rhau,
+                   family = binomial(link = logit),
+                   prior = normal(0,5),
+                   prior_intercept = normal(0,5),
+                   prior_covariance = decov(),
+                   chains = 3, iter = 2000, warmup = 1000, cores = 3)
+```
+```{r print_occ2, echo = FALSE}
+occ2
+```
+
+Model 2
+
+```{r fit_occ3, eval = refit_occ, echo = FALSE}
+# Inter-island differences, varying among years, plus PC1 + PC2
+occ3 <- stan_glmer(cbind(egg, viable - egg) ~ island + PC1 + PC2 + (1 | site) + (island | year),
+                   data =  rhau,
+                   family = binomial(link = logit),
+                   prior = normal(0,5),
+                   prior_intercept = normal(0,5),
+                   prior_covariance = decov(),
+                   chains = 3, iter = 2000, warmup = 1000, cores = 3)
+```
+```{r print_occ3, echo = FALSE}
+occ3
+```
+
+Model 3
+
+```{r fit_occ4, eval = refit_occ, echo = FALSE}
+# Inter-island differences plus PC1 + PC2, no random time-variation
+occ4 <- stan_glmer(cbind(egg, viable - egg) ~ island + PC1 + PC2 + (1 | site),
+                   data =  rhau,
+                   family = binomial(link = logit),
+                   prior = normal(0,5),
+                   prior_intercept = normal(0,5),
+                   prior_covariance = decov(),
+                   chains = 3, iter = 2000, warmup = 1000, cores = 3)
+```
+```{r print_occ4, echo = FALSE}
+occ4
+```
+
+We can assess the adequacy of the "full" model `occ3` by generating replicate pseudo-data from its posterior predictive distribution and comparing them to the real data...
+
+```{r plot_ppd_occ, fig.dim = c(7,5), out.width = "50%", echo = FALSE}
+## Model validation by graphical posterior predictive checking
+# default plot: marginal distribution of data and posterior predictive distribution
+pp_check(occ3) + theme_bw(base_size = 16) + 
+  labs(x = bquote(italic(P) * "(burrow occupancy)"), y = "Density",
+       title = "Posterior predictive density") + 
+  theme(panel.grid = element_blank(), plot.title = element_text(hjust = 0.5))
+```
+
+
+## Model Selection
+
+We compare the expected out-of-sample predictive performance of the candidate models using the Bayesian Pareto-smoothed approxiamte leave-one-out cross-validation score...
+
+```{r loo_occ, eval = refit_occ, include = FALSE}
+## Model selection by approximate leave-one-out cross-validation
+occ_loos <-  lapply(list(occ2 = occ2, occ3 = occ3, occ4 = occ4), loo)
+```
+```{r loo_occ_compare, echo = FALSE}
+# unpaired comparisons
+occ_compare <- loo_compare(occ_loos)
+print(occ_compare, simplify = FALSE)
+```
+```{r loo_occ_compair, echo = FALSE}
+# pairwise comparisons
+occ_compair <- loo_compair(occ_loos)
+occ_compair
+```
+```{r cache_occ, eval = !refit_occ, include = FALSE}
+## Cache stanfits and loo objects
+save(list = grep("occ", ls(), value = TRUE), file = here::here("analysis","cache","occ_stanfit_loo.RData"))
+```
+
+## Plots
+
+We can explore the predictions of the selected model by plotting the posterior distribution of fitted values as time series for each island and comparing them to the sample proportion of occupied burrows (with binomial 95% confidence intervals).
+
+```{r occ_fitted_timeseries, fig.dim = c(7,5), out.width = "60%", echo = FALSE}
+## Time series of fitted and observed fledging success at DI and PI
+## (This will take some time to render. For alternate version, 
+## comment out both calls to densregion() and uncomment polygon()).
+par(mar = c(5.1,4.5,1,1))
+
+YY <- sort(unique(rhau$year))
+newdata <- data.frame(year = rep(YY, each = 2), site = "newsite",
+                      island = rep(c("DI","PI"), length(YY)))
+pfit <- posterior_linpred(occ2, transform = TRUE, re.form = ~ (1 | year), newdata = newdata)
+pobs <- aggregate(cbind(viable, egg) ~ year + island, data = rhau, sum)
+pobs_ci <- binconf(pobs$egg, n = pobs$viable)
+eval.points <- range(pobs_ci, apply(pfit,2,quantile,c(0.025,0.975)))
+eval.points <- seq(min(eval.points), max(eval.points), length = 300)
+xyDI <- pfit[,newdata$island=="DI"]
+pxyDI <- t(apply(xyDI, 2, function(x) 
+  sm.density(x, eval.points = eval.points, display = "none")$estimate))
+xyPI <- pfit[,newdata$island=="PI"]
+pxPI <- sm.density(as.vector(xyPI), display = "none")
+pxyPI <- t(apply(xyPI, 2, function(x) 
+  sm.density(x, eval.points = eval.points, display = "none")$estimate))
+
+plot(newdata$year[newdata$island=="PI"], apply(pfit[,newdata$island=="PI"],2,median), 
+     las = 1, cex.axis = 1.2, cex.lab = 1.5, type = "l", lwd = 3, col = "cornflowerblue",
+     xlab = "Year", ylab = bquote(italic(P) * "(burrow occupancy)"), 
+     ylim = range(pobs_ci, apply(pfit,2,quantile,c(0.025,0.975))), 
+     xaxs = "i", xaxt = "n", yaxs = "i")
+lines(newdata$year[newdata$island=="DI"], apply(pfit[,newdata$island=="DI"],2,median),
+      lwd = 3, col = "darkgray")
+axis(1, at = min(rhau$year):max(rhau$year))
+
+densregion(newdata$year[newdata$island=="PI"], eval.points, pxyPI,
+         colmax = transparent("cornflowerblue",0.1), colmin = "transparent")
+# polygon(c(newdata$year[newdata$island=="PI"], rev(newdata$year[newdata$island=="PI"])),
+#         c(apply(pfit[,newdata$island=="PI"],2,quantile,0.025), 
+#           rev(apply(pfit[,newdata$island=="PI"],2,quantile,0.975))), 
+#         col = transparent("cornflowerblue",0.7), border = NA)
+densregion(newdata$year[newdata$island=="DI"], eval.points, pxyDI,
+          colmax = transparent("darkgray",0.3), colmin = "transparent")
+# polygon(c(newdata$year[newdata$island=="DI"], rev(newdata$year[newdata$island=="DI"])),
+#         c(apply(pfit[,newdata$island=="DI"],2,quantile,0.025), 
+#           rev(apply(pfit[,newdata$island=="DI"],2,quantile,0.975))), 
+#         col = transparent("darkgray",0.7), border = NA)
+
+YYPI <- pobs$year[pobs$island=="PI"]
+YYPI <- YYPI + c(0.05, rep(-0.05, length(YYPI) - 2), -0.1)
+points(YYPI, pobs_ci[pobs$island=="PI","PointEst"], 
+       col = "cornflowerblue", pch = 15, cex = 1.5)
+segments(x0 = YYPI, y0 = pobs_ci[pobs$island=="PI","Lower"],
+         y1 = pobs_ci[pobs$island=="PI","Upper"], col = "cornflowerblue")
+YYDI <- pobs$year[pobs$island=="DI"]
+YYDI <- YYDI + c(0.1, rep(0.05, length(YYDI) - 2), -0.05)
+points(YYDI, pobs_ci[pobs$island=="DI","PointEst"], 
+       col = "darkgray", pch = 16, cex = 1.5)
+segments(x0 = YYDI, y0 = pobs_ci[pobs$island=="DI","Lower"],
+         y1 = pobs_ci[pobs$island=="DI","Upper"], col = "darkgray")
+
+legend("topleft", c("Protection","Destruction"), lwd = 3, pch = c(15,16), 
+       col = c("cornflowerblue","darkgray"))
+```
+
+
+# GLMMs of Apparent Fledging Success
+
+## Model Fitting and Assessment
+
+Model 1
+
+```{r fit_suc2, eval = refit_suc, echo = FALSE}
+# Inter-island differences, varying among years
+suc2 <- stan_glmer(cbind(last_check, egg - last_check) ~ island + (1 | site) + (island | year),
+                   data =  rhau,
+                   family = binomial(link = logit),
+                   prior = normal(0,5),
+                   prior_intercept = normal(0,5),
+                   prior_covariance = decov(),
+                   chains = 3, iter = 2000, warmup = 1000, cores = 3)
+```
+```{r print_suc2, echo = FALSE}
+suc2
+```
+
+Model 2
+
+```{r fit_suc3, eval = refit_suc, echo = FALSE}
+suc3 <- stan_glmer(cbind(last_check, egg - last_check) ~ island + PC1 + PC2 + (1 | site) + (island | year),
+                   data =  rhau,
+                   family = binomial(link = logit),
+                   prior = normal(0,5),
+                   prior_intercept = normal(0,5),
+                   prior_covariance = decov(),
+                   chains = 3, iter = 2000, warmup = 1000, cores = 3)
+```
+```{r print_suc3, echo = FALSE}
+suc3
+```
+
+Model 3
+
+```{r fit_suc4, eval = refit_suc, echo = FALSE}
+suc4 <- stan_glmer(cbind(last_check, egg - last_check) ~ island + PC1 + PC2 + (1 | site),
+                   data =  rhau,
+                   family = binomial(link = logit),
+                   prior = normal(0,5),
+                   prior_intercept = normal(0,5),
+                   prior_covariance = decov(),
+                   chains = 3, iter = 2000, warmup = 1000, cores = 3)
+```
+```{r print_suc4, echo = FALSE}
+suc4
+```
+
+Marginal posterior predictive density of largest model
+
+```{r plot_ppd_suc, fig.dim = c(7,5), out.width = "50%", echo = FALSE}
+## Model validation by graphical posterior predictive checking
+# default plot: marginal distribution of data and posterior predictive distribution
+pp_check(suc3) + theme_bw(base_size = 16) + theme() + 
+  labs(x = bquote(italic(P) * "(fledging)"), y = "Density", 
+       title = "Posterior predictive density") + 
+  theme(panel.grid = element_blank(), plot.title = element_text(hjust = 0.5))
+```
+
+## Model Selection
+
+```{r loo_suc, eval = refit_suc, include = FALSE}
+suc_loos <- lapply(list(suc2 = suc2, suc3 = suc3, suc4 = suc4), loo, k_threshold = 0.7)
+```
+```{r loo_suc_compare, echo = FALSE}
+# unpaired comparisons
+suc_compare <- loo_compare(suc_loos)
+print(suc_compare, simplify = FALSE)
+```
+```{r loo_suc_compair, echo = FALSE}
+# pairwise comparisons
+suc_compair <- loo_compair(suc_loos)
+suc_compair
+```
+
+## Plots
+
+We can explore the predictions of the selected model by plotting the posterior distribution of fitted values as time series for each island and comparing them to the sample proportion of occupied burrows (with binomial 95% confidence intervals).
+
+```{r suc_fitted_timeseries, fig.dim = c(7,5), out.width = "60%", echo = FALSE}
+## Time series of fitted and observed fledging success at DI and PI
+## (This will take some time to render. For alternate version, 
+## comment out both calls to densregion() and uncomment polygon()).
+par(mar = c(5.1,4.5,1,1))
+
+YY <- sort(unique(rhau$year))
+newdata <- data.frame(year = rep(YY, each = 2), site = "newsite",
+                      island = rep(c("DI","PI"), length(YY)))
+pfit <- posterior_linpred(suc2, transform = TRUE, re.form = ~ (1 | year), newdata = newdata)
+pobs <- aggregate(cbind(egg, last_check) ~ year + island, data = rhau, sum)
+pobs_ci <- binconf(pobs$last_check, n = pobs$egg)
+eval.points <- range(pobs_ci, apply(pfit,2,quantile,c(0.025,0.975)))
+eval.points <- seq(min(eval.points), max(eval.points), length = 300)
+xyDI <- pfit[,newdata$island=="DI"]
+pxyDI <- t(apply(xyDI, 2, function(x) 
+  sm.density(x, eval.points = eval.points, display = "none")$estimate))
+xyPI <- pfit[,newdata$island=="PI"]
+pxPI <- sm.density(as.vector(xyPI), display = "none")
+pxyPI <- t(apply(xyPI, 2, function(x) 
+  sm.density(x, eval.points = eval.points, display = "none")$estimate))
+
+plot(newdata$year[newdata$island=="PI"], apply(pfit[,newdata$island=="PI"],2,median), 
+     las = 1, cex.axis = 1.2, cex.lab = 1.5, type = "l", lwd = 3, col = "cornflowerblue",
+     xlab = "Year", ylab = bquote(italic(P) * "(fledging)"), 
+     ylim = range(pobs_ci, apply(pfit,2,quantile,c(0.025,0.975))), 
+     xaxs = "i", xaxt = "n", yaxs = "i")
+lines(newdata$year[newdata$island=="DI"], apply(pfit[,newdata$island=="DI"],2,median),
+      lwd = 3, col = "darkgray")
+axis(1, at = min(rhau$year):max(rhau$year))
+
+densregion(newdata$year[newdata$island=="PI"], eval.points, pxyPI,
+         colmax = transparent("cornflowerblue",0.1), colmin = "transparent")
+# polygon(c(newdata$year[newdata$island=="PI"], rev(newdata$year[newdata$island=="PI"])),
+#         c(apply(pfit[,newdata$island=="PI"],2,quantile,0.025), 
+#           rev(apply(pfit[,newdata$island=="PI"],2,quantile,0.975))), 
+#         col = transparent("cornflowerblue",0.7), border = NA)
+densregion(newdata$year[newdata$island=="DI"], eval.points, pxyDI,
+          colmax = transparent("darkgray",0.3), colmin = "transparent")
+# polygon(c(newdata$year[newdata$island=="DI"], rev(newdata$year[newdata$island=="DI"])),
+#         c(apply(pfit[,newdata$island=="DI"],2,quantile,0.025), 
+#           rev(apply(pfit[,newdata$island=="DI"],2,quantile,0.975))), 
+#         col = transparent("darkgray",0.7), border = NA)
+
+YYPI <- pobs$year[pobs$island=="PI"]
+YYPI <- YYPI + c(0.05, rep(-0.05, length(YYPI) - 2), -0.1)
+points(YYPI, pobs_ci[pobs$island=="PI","PointEst"], 
+       col = "cornflowerblue", pch = 15, cex = 1.5)
+segments(x0 = YYPI, y0 = pobs_ci[pobs$island=="PI","Lower"],
+         y1 = pobs_ci[pobs$island=="PI","Upper"], col = "cornflowerblue")
+YYDI <- pobs$year[pobs$island=="DI"]
+YYDI <- YYDI + c(0.1, rep(0.05, length(YYDI) - 2), -0.05)
+points(YYDI, pobs_ci[pobs$island=="DI","PointEst"], 
+       col = "darkgray", pch = 16, cex = 1.5)
+segments(x0 = YYDI, y0 = pobs_ci[pobs$island=="DI","Lower"],
+         y1 = pobs_ci[pobs$island=="DI","Upper"], col = "darkgray")
+
+legend("topleft", c("Protection","Destruction"), lwd = 3, pch = c(15,16), 
+       col = c("cornflowerblue","darkgray"))
+
+```
 
